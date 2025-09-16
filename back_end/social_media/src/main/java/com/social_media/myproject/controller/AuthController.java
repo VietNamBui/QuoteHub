@@ -56,7 +56,7 @@ public class AuthController {
 		User createdUser = new User();
 		createdUser.setEmail(email);
 		createdUser.setFullName(fullName);
-		createdUser.setPassword(password);
+		createdUser.setPassword(passwordEncoder.encode(password));
 		createdUser.setBirthDate(birthDate);
 		createdUser.setVerification(new Varification());
 		
@@ -72,13 +72,18 @@ public class AuthController {
 		return new ResponseEntity<AuthResponse>(res, HttpStatus.CREATED);
 	}
 	
+	@PostMapping("/signin")
 	public ResponseEntity<AuthResponse> signin(@RequestBody User user) {
 		String username = user.getEmail();
 		String password = user.getPassword();
 		
 		Authentication authentication = authenticate(username, password);
 		
-		return null;
+		String token = jwtProvider.generateToken(authentication);
+		
+		AuthResponse res = new AuthResponse(token, true);
+		
+		return new ResponseEntity<AuthResponse>(res, HttpStatus.ACCEPTED);
 	}
 
 	private Authentication authenticate(String username, String password) {
