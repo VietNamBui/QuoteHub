@@ -81,7 +81,7 @@ public class TwitServiceImplementation implements TwitService{
 	@Override
 	public Twit createdReply(TwitReplyReques req, User user) throws TwitException {
 		
-		Twit replyFor=findById(req.get)
+		Twit replyFor=findById(req.getTwitId());
 		
 		Twit twit = new Twit();
 		twit.setContent(req.getContent());
@@ -90,23 +90,27 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setUser(user);
 		twit.setReply(true);
 		twit.setTwit(false);
-		twit.getReplyFor(twit)
+		twit.setReplyFor(replyFor);
+		
+		Twit savedReply = twitRepository.save(twit);
+		
+		twit.getReplyTwits().add(savedReply);
+		twitRepository.save(replyFor);
 		
 		
-		
-		return null;
+		return replyFor;
 	}
 
 	@Override
 	public List<Twit> getUserTwit(User user) {
 		// TODO Auto-generated method stub
-		return null;
+		return twitRepository.findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(user, user.getId());
 	}
 
 	@Override
 	public List<Twit> findByLikesContainsUser(User user) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return twitRepository.findByLikesUser_id(user.getId());
 	}
 
 }

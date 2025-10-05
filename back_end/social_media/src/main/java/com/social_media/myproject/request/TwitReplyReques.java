@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 
+@Data
 public class TwitReplyReques {
 	
-	@Data
 	private String content;
 	private Long twitId;
 	private LocalDateTime createdAt;
