@@ -92,7 +92,7 @@ public class UserServiceImplementation implements UserService {
 
 	@Override
 	public List<User> searchUser(String query) {
-		// TODO Auto-generated method stub
+		
 		return userRepository.searchUser(query);
 	}
 

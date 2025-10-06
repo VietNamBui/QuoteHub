@@ -17,6 +17,6 @@ public class TwitController {
 	@Autowired
 	private UserService userService;
 	
-	public ResponseEntity<TwitDto>
+	public ResponseEntity<TwitDto>;
 
 }
