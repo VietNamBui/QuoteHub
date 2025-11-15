@@ -12,7 +12,7 @@ public interface TwitRepository extends JpaRepository<Twit, Long>{
 	
 	List<Twit> findAllByIsTwitTrueOrderByCreatedAtDesc();
 	
-	List<Twit> findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(User user, Long userId);
+//	List<Twit> findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(User user, Long userId);
 
 	List<Twit> findByLikesContainingOrderByCreatedAtDesc(User user);
 	
