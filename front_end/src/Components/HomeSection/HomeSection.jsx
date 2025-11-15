@@ -1,11 +1,15 @@
 import { Avatar, Button } from "@mui/material";
 import { useFormik } from "formik";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as Yup from "yup";
 import ImageIcon from "@mui/icons-material/Image";
 import FmdGoodIcon from "@mui/icons-material/FmdGood";
 import TagFacesIcon from "@mui/icons-material/TagFaces";
 import TweetCard from "./TweetCard";
+import { useDispatch, useSelector } from "react-redux";
+import { createTweet, getAllTweets } from './../../Store/Twit/Action';
+import { store } from './../../Store/store';
+import { uploadToCloudnary } from "../../Utils/uploadToCloudnary";
 
 const validationSchema = Yup.object().shape({
   content: Yup.string().required("Tweet text is required"),
@@ -13,21 +17,33 @@ const validationSchema = Yup.object().shape({
 const HomeSection = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectImage, setSelectedImage] = useState("");
-  const handleSubmit = (values) => {
+  const dispatch=useDispatch();
+  const {twit}=useSelector(store=>store);
+  console.log("twit",twit)
+
+  const handleSubmit = (values,actions) => {
+    dispatch(createTweet(values))
+    actions.resetForm()
     console.log("values ", values);
+    setSelectedImage("")
   };
+
+  useEffect(()=>{
+dispatch(getAllTweets())
+  },[twit.like,twit.retwit])
 
   const formik = useFormik({
     initialValues: {
       content: "",
       image: "",
+      isTweet:true
     },
     onSubmit: handleSubmit,
     validationSchema,
   });
-  const handleSelectImage = (event) => {
+  const handleSelectImage = async (event) => {
     setUploadingImage(true);
-    const imgUrl = event.target.files[0];
+    const imgUrl = await uploadToCloudnary(event.target.files[0])
     formik.setFieldValue("image", imgUrl);
     setSelectedImage(imgUrl);
     setUploadingImage(false);
@@ -91,11 +107,14 @@ const HomeSection = () => {
                 </div>
               </div>
             </form>
+            <div>
+              {selectImage && <img src={selectImage} alt="" />}
+            </div>
           </div>
         </div>
       </section>
       <section>
-        {[1,1,1,1,1].map((item)=> <TweetCard/>)}
+        {twit.twits.map((item)=> <TweetCard item={item}/>)}
       </section>
     </div>
   );

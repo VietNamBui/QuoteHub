@@ -6,9 +6,14 @@ import Avatar from "@mui/material/Avatar";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../Store/Auth/Action";
 
 const Navigation = () => {
+  const { auth } = useSelector((store) => store);
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const dispatch=useDispatch()
+
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -17,10 +22,11 @@ const Navigation = () => {
     setAnchorEl(null);
   };
   const navigate = useNavigate();
-  const handleLogout=()=>{
-    console.log("logout")
-    handleClose()
-  }
+  const handleLogout = () => {
+    console.log("logout");
+    handleClose();
+    dispatch(logout())
+  };
   return (
     <div className="h-screen sticky top-0">
       <div>
@@ -43,7 +49,7 @@ const Navigation = () => {
               className="cursor-pointer flex space-x-3 items-center"
               onClick={() =>
                 item.title === "Profile"
-                  ? navigate(`/profile/${5}`)
+                  ? navigate(`/profile/${auth.user?.id}`)
                   : navigate(item.path)
               }
             >
@@ -73,8 +79,10 @@ const Navigation = () => {
             src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
           />
           <div>
-            <span>Ngọc Thanh</span>
-            <span className="opacity-70">@ngocthanh</span>
+            <p>{auth.user?.fullName}</p>
+            <span className="opacity-70">
+              @{auth.user.fullName.split(" ").join("_").toLowerCase()}
+            </span>
           </div>
 
           <Button
@@ -98,7 +106,6 @@ const Navigation = () => {
             }}
           >
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
-
           </Menu>
         </div>
       </div>
