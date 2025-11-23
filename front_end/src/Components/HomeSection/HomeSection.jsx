@@ -19,12 +19,13 @@ const HomeSection = () => {
   const [selectImage, setSelectedImage] = useState("");
   const dispatch=useDispatch();
   const {twit}=useSelector(store=>store);
-  console.log("twit",twit)
+  // console.log("twit",twit)
 
   const handleSubmit = (values,actions) => {
+    console.log("values", values);
     dispatch(createTweet(values))
     actions.resetForm()
-    console.log("values ", values);
+    // console.log("values ", values);
     setSelectedImage("")
   };
 
@@ -67,7 +68,7 @@ dispatch(getAllTweets())
                   name="content"
                   placeholder="Chuyện gì đang xảy ra vậy?"
                   className={`border-none outline-none text-xl bg-transparent`}
-                  {...formik.getFieldProps("Content")}
+                  {...formik.getFieldProps("content")}
                 />
                 {formik.errors.content && formik.touched.content && (
                   <span className="text-red-500">{formik.errors.content}</span>
@@ -114,6 +115,7 @@ dispatch(getAllTweets())
         </div>
       </section>
       <section>
+        {console.log(twit)}
         {twit.twits.map((item)=> <TweetCard item={item}/>)}
       </section>
     </div>

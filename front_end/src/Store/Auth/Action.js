@@ -1,32 +1,59 @@
 import axios from "axios"
 import { api, API_BASE_URL } from "../../config/api"
 import { FIND_USER_BY_ID_FAILURE, FIND_USER_BY_ID_SUCCESS, FOLLOW_USER_FAILURE, FOLLOW_USER_SUCCESS, GET_USER_PROFILE_FAILURE, GET_USER_PROFILE_SUCCESS, LOGIN_USER_FAILURE, LOGIN_USER_SUCCESS, LOGOUT, REGISTER_USER_FAILURE, REGISTER_USER_SUCCESS, UPDATE_USER_FAILURE, UPDATE_USER_SUCCESS } from "./ActionType"
+import { toast } from "react-toastify";
 
-export const loginUser=(loginData)=>async(dispatch)=>{
-    try {
-        const {data}=await axios.post(`${API_BASE_URL}/auth/signin`,loginData)
-console.log("logedin user ",data)
-        if(data.jwt){
-            localStorage.setItem("jwt",data.jwt)
-        }
-        dispatch({type:LOGIN_USER_SUCCESS,payload:data.jwt})
-    } catch (error) {
-        console.log("error ",error)
-        dispatch({type:LOGIN_USER_FAILURE,payload:error.message})
+export const loginUser = (loginData) => async (dispatch) => {
+  try {
+    dispatch({ type: "LOGIN_REQUEST" });
+    // xóa token cũ trước khi đăng nhập
+    localStorage.removeItem("jwt");
+    const { data } = await axios.post(`${API_BASE_URL}/auth/signin`, loginData);
+    console.log("logedin user ", data);
+    if (data.jwt) {
+      localStorage.setItem("jwt", data.jwt);
     }
-}
+    // dispatch({ type: LOGIN_USER_SUCCESS, payload: data.jwt });
+    dispatch({ type: "LOGIN_SUCCESS", payload: data });
+  } catch (error) {
+    console.log("error ", error);
+    // dispatch({ type: LOGIN_USER_FAILURE, payload: error.message });
+    dispatch({
+        type: "LOGIN_FAIL",
+        payload: error.response?.data?.message || "Lỗi đăng nhập",
+      });
+  }
+};
 
-export const registerUser=(registerData)=>async(dispatch)=>{
+// export const registerUser=(registerData)=>async(dispatch)=>{
+//     try {
+//         const {data}=await axios.post(`${API_BASE_URL}/auth/signup`,registerData)
+//         console.log("singup user ",data)
+//         if(data.jwt){
+//             localStorage.setItem("jwt",data.jwt)
+//         }
+//         dispatch({type:REGISTER_USER_SUCCESS,payload:data.jwt})
+//     } catch (error) {
+//         console.log("error ",error)
+//         dispatch({type:REGISTER_USER_FAILURE,payload:error.message})
+//     }
+// }
+export const registerUser = (userData) => async (dispatch) => {
     try {
-        const {data}=await axios.post(`${API_BASE_URL}/auth/signup`,registerData)
-        console.log("singup user ",data)
-        if(data.jwt){
-            localStorage.setItem("jwt",data.jwt)
-        }
-        dispatch({type:REGISTER_USER_SUCCESS,payload:data.jwt})
+      dispatch({ type: "REGISTER_REQUEST" });
+      
+        // xóa token cũ trước khi đăng ký
+        localStorage.removeItem("jwt");
+      const { data } = await api.post("/auth/signup", userData);
+  
+      dispatch({ type: "REGISTER_SUCCESS", payload: data });
+      toast.success("Tạo tài khoản thành công!");
     } catch (error) {
-        console.log("error ",error)
-        dispatch({type:REGISTER_USER_FAILURE,payload:error.message})
+      const msg = error.response?.data?.message || "Đăng ký thất bại";
+  
+      dispatch({ type: "REGISTER_FAILURE", payload: msg });
+  
+      toast.error(msg); // HIỆN POPUP
     }
 }
 

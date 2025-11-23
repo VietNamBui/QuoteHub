@@ -62,35 +62,57 @@ export default function ReplyModal({ handleClose, open, item }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <div className="flex space-x-5">
-            <Avatar
-              onClick={() => navigate(`/profile/${6}`)}
-              className="cursor-pointer"
-              alt="username"
-              src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-            />
-            <div className="w-full">
-              <div className="flex justify-between items-center">
-                <div className="flex cursor-pointer items-center space-x-2">
-                  <span className="font-semibold">Ngọc Thanh</span>
-                  <span className="text-gray-600">@ngocthanh . 2m</span>
-                  <img
-                    className="ml-2 w-5 h-5"
-                    src="https://i.pinimg.com/736x/65/18/4d/65184d64749f5795911b78d51d9221df.jpg"
-                    alt=""
+          {item.replyTwits && item.replyTwits.length > 0 && (
+            <div className="ml-10 mt-4 space-y-4">
+              {item.replyTwits.map((reply) => (
+                <div key={reply.id} className="flex space-x-5">
+                  <Avatar
+                    onClick={() => navigate(`/profile/${reply.user?.id}`)}
+                    className="cursor-pointer"
+                    alt={reply.user?.fullName}
+                    src={reply.user?.avatar || "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"}
                   />
+                  <div className="w-full">
+                    <div className="flex justify-between items-center">
+                      <div className="flex cursor-pointer items-center space-x-2">
+                        <span className="font-semibold">{reply.user?.fullName}</span>
+                        <span className="text-gray-600">@{reply.user?.username} . 2m</span>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div
+                        onClick={() => navigate(`/twit/${reply.id}`)}
+                        className="cursor-pointer"
+                      >
+                        <p className="mb-2 p-0">{reply.content}</p>
+                      </div>
+                    </div>
+
+                    {/* Đệ quy render reply của reply */}
+                    {reply.replyTwits && reply.replyTwits.length > 0 && (
+                      <div className="ml-10 mt-2">
+                        {reply.replyTwits.map((r) => (
+                          // Copy lại nội dung render reply như trên
+                          <div key={r.id} className="flex space-x-5">
+                            <Avatar
+                              onClick={() => navigate(`/profile/${r.user?.id}`)}
+                              className="cursor-pointer"
+                              alt={r.user?.fullName}
+                              src={r.user?.avatar}
+                            />
+                            <div className="w-full">
+                              <p>{r.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="mt-2">
-                <div
-                  onClick={() => navigate(`/twit/${3}`)}
-                  className="cursor-pointer"
-                >
-                  <p className="mb-2 p-0">full stack projectấdsmhdjahbds</p>
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
+
           <section className={`py-10`}>
             <div className="flex space-x-5">
               <Avatar
@@ -105,7 +127,7 @@ export default function ReplyModal({ handleClose, open, item }) {
                       name="content"
                       placeholder="Chuyện gì đang xảy ra vậy?"
                       className={`border-none outline-none text-xl bg-transparent`}
-                      {...formik.getFieldProps("Content")}
+                      {...formik.getFieldProps("content")}
                     />
                     {formik.errors.content && formik.touched.content && (
                       <span className="text-red-500">

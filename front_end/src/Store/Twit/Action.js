@@ -69,7 +69,7 @@ export const createTweetReply=(tweetData)=>async(dispatch)=>{
 
 export const createReTweet=(twitId)=>async(dispatch)=>{
     try {
-        const {data}=await api.post(`/api/twits/${twitId}/retwit`);
+        const {data}=await api.put(`/api/twits/${twitId}/retwit`);
         console.log("Retweet: ",data)
         dispatch({type:RETWEET_SUCCESS,payload:data})
     } catch (error) {
@@ -80,7 +80,7 @@ export const createReTweet=(twitId)=>async(dispatch)=>{
 
 export const likeTweet=(twitId)=>async(dispatch)=>{
     try {
-        const {data}=await api.put(`/api/${twitId}/like`);
+        const {data}=await api.post(`/api/${twitId}/likes`);
         console.log("like tweet : ",data)
         dispatch({type:LIKE_TWEET_SUCCESS,payload:data})
     } catch (error) {
@@ -91,7 +91,7 @@ export const likeTweet=(twitId)=>async(dispatch)=>{
 
 export const deleteTweet=(twitId)=>async(dispatch)=>{
     try {
-        const {data}=await api.post(`/api/tweet/${twitId}`);
+        const {data}=await api.delete(`/api/twits/${twitId}`);
         console.log("deleted tweet : ",data)
         dispatch({type:TWEET_DELETE_SUCCESS,payload:twitId})
     } catch (error) {

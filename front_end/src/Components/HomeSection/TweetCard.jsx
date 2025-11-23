@@ -11,7 +11,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteOutlined from "@mui/icons-material/Favorite";
 import ReplyModal from "./ReplyModal";
 import { useDispatch } from "react-redux";
-import { createReTweet, likeTweet } from "../../Store/Twit/Action";
+import { createReTweet, likeTweet, deleteTweet } from "../../Store/Twit/Action";
 
 const TweetCard = ({ item }) => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const TweetCard = ({ item }) => {
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
+    dispatch(deleteTweet(item?.id))
     setAnchorEl(null);
   };
   const handleDeleteTweet = () => {
@@ -59,7 +60,7 @@ const TweetCard = ({ item }) => {
             <div className="flex cursor-pointer items-center space-x-2">
               <span className="font-semibold">{item?.user?.fullName}</span>
               <span className="text-gray-600">
-                @{item?.user?.fullName.split("").join("_").toLowerCase()} . 2m
+                @{(item?.user?.fullName || "unknown").split("").join("_").toLowerCase()} . 2m
               </span>
               <img
                 className="ml-2 w-5 h-5"

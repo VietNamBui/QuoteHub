@@ -17,8 +17,12 @@ public class UserDtoMapper {
 		userDto.setBackgroundImage(user.getBackgroundImage());
 		userDto.setBio(user.getBio());
 		userDto.setBirthDate(user.getBirthDate());
-		userDto.setFollowers(toUserDtos(user.getFollowers()));
-		userDto.setFollowing(toUserDtos(user.getFollowings()));
+//		userDto.setFollowers(toUserDtos(user.getFollowers()));
+//		userDto.setFollowing(toUserDtos(user.getFollowings()));
+		// SỬA ĐỔI 1: Chuyển Set<User> sang List<User>
+	    userDto.setFollowers(toUserDtos(new ArrayList<>(user.getFollowers()))); 
+	    // SỬA ĐỔI 2: Chuyển Set<User> sang List<User>
+	    userDto.setFollowing(toUserDtos(new ArrayList<>(user.getFollowings())));
 		userDto.setLogin_with_google(user.isLogin_with_google());
 		userDto.setLocation(user.getLocation());
 //		userDto.setVerified(false);

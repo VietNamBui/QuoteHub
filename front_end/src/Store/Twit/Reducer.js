@@ -87,7 +87,10 @@ export const twitReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: null,
-        retwit: action.payload,
+        retwit: action.payload.retwit,
+        twits: state.twits.map(t =>
+          t.id === action.payload.id ? action.payload : t
+        ),
       };
     case FIND_TWEET_BY_ID_SUCCESS:
     case REPLY_TWEET_SUCCESS:

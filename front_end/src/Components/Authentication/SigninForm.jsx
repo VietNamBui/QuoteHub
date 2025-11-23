@@ -1,10 +1,13 @@
-import { Button, Grid, TextField } from "@mui/material";
-import { blue } from "@mui/material/colors";
+import { Button, Stack, TextField, Typography, Divider } from "@mui/material";
+import { blue, grey } from "@mui/material/colors";
 import { useFormik } from "formik";
 import React from "react";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 import { loginUser } from './../../Store/Auth/Action';
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useEffect } from "react";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string()
@@ -13,7 +16,14 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required("Bắt buộc nhập mật khẩu!"),
 });
 const SigninForm = () => {
-  const dispath=useDispatch();
+  const dispath = useDispatch();
+  const navigate = useNavigate();
+
+  const { loading, loginSuccess } = useSelector((state) => state.auth);
+
+
+
+  
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -25,31 +35,51 @@ const SigninForm = () => {
       console.log("giá trị form", values);
     },
   });
+  const fieldCommonProps = {
+    fullWidth: true,
+    variant: "outlined",
+    size: "medium",
+    InputLabelProps: { shrink: true },
+  };
+
+  useEffect(() => {
+    if (loginSuccess) {
+      navigate("/home");
+    }
+  }, [loginSuccess]);
+
   return (
     <form onSubmit={formik.handleSubmit}>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
+      <Stack spacing={3}>
+        <div>
+          <Typography variant="subtitle2" sx={{ color: grey[600], fontWeight: 600, mb: 0.5 }}>
+            Email
+          </Typography>
           <TextField
-            fullWidth
-            label="Email"
+            {...fieldCommonProps}
+            placeholder="tenban@example.com"
             name="email"
-            variant="outlined"
-            size="large"
             value={formik.values.email}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.email && Boolean(formik.errors.email)}
             helperText={formik.touched.email && formik.errors.email}
           />
-        </Grid>
+        </div>
 
-        <Grid item xs={12}>
+        <div>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ color: grey[600], fontWeight: 600 }}>
+              Mật khẩu
+            </Typography>
+            <Typography variant="caption" sx={{ color: blue[500], cursor: "pointer" }}>
+              Quên mật khẩu?
+            </Typography>
+          </Stack>
           <TextField
-            fullWidth
-            label="Mật khẩu"
+            {...fieldCommonProps}
+            placeholder="Nhập mật khẩu của bạn"
             name="password"
-            variant="outlined"
-            size="large"
             type="password"
             value={formik.values.password}
             onChange={formik.handleChange}
@@ -57,19 +87,30 @@ const SigninForm = () => {
             error={formik.touched.password && Boolean(formik.errors.password)}
             helperText={formik.touched.password && formik.errors.password}
           />
-        </Grid>
-        <Grid className="mt-20" item xs={12}>
-          <Button
-            sx={{ borderRadius: "29px", py: "15px", bgcolor: blue[500] }}
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-          >
-            Đăng nhập
-          </Button>
-        </Grid>
-      </Grid>
+        </div>
+
+        <Divider sx={{ borderStyle: "dashed" }} />
+
+        <Button
+          sx={{
+            borderRadius: "18px",
+            py: "14px",
+            bgcolor: blue[500],
+            textTransform: "none",
+            fontSize: "1rem",
+            fontWeight: 700,
+            boxShadow: "0 10px 22px rgba(33, 150, 243, 0.3)",
+          }}
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={loading}
+        >
+          {/* Đăng nhập */}
+
+          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+        </Button>
+      </Stack>
     </form>
   );
 };

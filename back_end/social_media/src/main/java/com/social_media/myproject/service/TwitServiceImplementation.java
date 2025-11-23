@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.social_media.myproject.exception.TwitException;
 import com.social_media.myproject.exception.UserException;
 import com.social_media.myproject.model.Twit;
+import com.social_media.myproject.model.TwitRetwitUser;
 import com.social_media.myproject.model.User;
 import com.social_media.myproject.repository.TwitRepository;
 import com.social_media.myproject.request.TwitReplyReques;
@@ -27,8 +28,8 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setCreatedAt(LocalDateTime.now());
 		twit.setImage(req.getImage());
 		twit.setUser(user);
-		twit.setReply(false);
-		twit.setTwit(true);
+		twit.setIsReply(false);
+		twit.setIsTwit(true);
 		twit.setVideo(req.getVideo());
 		
 		return twitRepository.save(twit);
@@ -39,18 +40,43 @@ public class TwitServiceImplementation implements TwitService{
 		return twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
 	}
 
+//	@Override
+//	public Twit retwit(Long twitId, User user) throws UserException, TwitException {
+//		Twit twit = findById(twitId);
+//		
+//		if(twit.getRetwits().contains(user)) {
+//			twit.getRetwits().remove(user);
+//		} else {
+//			twit.getRetwits().add(user);
+//		}
+//		
+//		return twitRepository.save(twit);
+//	}
+	
 	@Override
 	public Twit retwit(Long twitId, User user) throws UserException, TwitException {
-		Twit twit = findById(twitId);
-		
-		if(twit.getRetwitUser().contains(user)) {
-			twit.getRetwitUser().remove(user);
-		} else {
-			twit.getRetwitUser().add(user);
-		}
-		
-		return twitRepository.save(twit);
+	    Twit twit = findById(twitId);
+
+	    // Kiểm tra xem user đã retweet chưa
+	    TwitRetwitUser existing = twit.getRetwits().stream()
+	        .filter(tr -> tr.getUser().getId().equals(user.getId()))
+	        .findFirst()
+	        .orElse(null);
+
+	    if (existing != null) {
+	        // Nếu đã retweet, remove retweet
+	        twit.getRetwits().remove(existing);
+	    } else {
+	        // Nếu chưa retweet, tạo mới TwitRetwitUser
+	        TwitRetwitUser trUser = new TwitRetwitUser();
+	        trUser.setTwit(twit);
+	        trUser.setUser(user);
+	        twit.getRetwits().add(trUser);
+	    }
+
+	    return twitRepository.save(twit);
 	}
+
 
 	@Override
 	public Twit findById(Long twitId) throws TwitException {
@@ -88,8 +114,8 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setCreatedAt(LocalDateTime.now());
 		twit.setImage(req.getImage());
 		twit.setUser(user);
-		twit.setReply(true);
-		twit.setTwit(false);
+		twit.setIsReply(true);
+		twit.setIsTwit(false);
 		twit.setReplyFor(replyFor);
 		
 		Twit savedReply = twitRepository.save(twit);

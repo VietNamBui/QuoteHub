@@ -19,6 +19,8 @@ const initialState = {
   loading: false,
   error: null,
   jwt: null,
+  registerSuccess: false,
+  loginSuccess: false,
 };
 export const authReducer = (state = initialState, action) => {
   switch (action.type) {
@@ -34,12 +36,12 @@ export const authReducer = (state = initialState, action) => {
     case GET_USER_PROFILE_SUCCESS:
       return { ...state, loading: false, error: null, user: action.payload };
     //case UPDATE_USER_SUCCESS:
-     // return {
-     //   ...state,
-      //  loading: false,
-      //  error: null,
-      //  user: action.payload,
-     //   updateUser: true,
+    // return {
+    //   ...state,
+    //  loading: false,
+    //  error: null,
+    //  user: action.payload,
+    //   updateUser: true,
     //  };
     case FIND_USER_BY_ID_SUCCESS:
     case UPDATE_USER_SUCCESS:
@@ -63,6 +65,24 @@ export const authReducer = (state = initialState, action) => {
     case LOGIN_USER_FAILURE:
     case REGISTER_USER_FAILURE:
     case GET_USER_PROFILE_FAILURE:
+      return { ...state, loading: false, error: action.payload };
+    case "REGISTER_REQUEST":
+    case "LOGIN_REQUEST":
+      return { ...state, loading: true, error: null };
+
+    case "REGISTER_SUCCESS":
+      return { ...state, loading: false, registerSuccess: true };
+
+    case "LOGIN_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        user: action.payload,
+        loginSuccess: true,
+      };
+
+    case "REGISTER_FAIL":
+    case "LOGIN_FAIL":
       return { ...state, loading: false, error: action.payload };
     default:
       return state;

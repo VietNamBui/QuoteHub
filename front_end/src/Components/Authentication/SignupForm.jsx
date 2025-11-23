@@ -1,168 +1,126 @@
 import {
   Button,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
+  Stack,
   TextField,
+  Typography,
 } from "@mui/material";
-import { blue } from "@mui/material/colors";
+import { blue, grey } from "@mui/material/colors";
 import { useFormik } from "formik";
 import React from "react";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 import { registerUser } from "../../Store/Auth/Action";
 
-const validationSchema = Yup.object().shape({
+const validationSchema = Yup.object({
   email: Yup.string()
     .email("Email không hợp lệ!")
     .required("Bắt buộc phải nhập email"),
-  password: Yup.string().required("Bắt buộc nhập mật khẩu!"),
+  password: Yup.string()
+    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+    .required("Bắt buộc nhập mật khẩu!"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password"), null], "Mật khẩu không trùng khớp!")
+    .required("Bắt buộc phải nhập lại mật khẩu"),
 });
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-const days = Array.from({ length: 31 }, (_, i) => i + 1);
-const months = [
-  { value: 1, label: "Tháng 1" },
-  { value: 2, label: "Tháng 2" },
-];
+
 const SignupForm = () => {
-  const dispatch=useDispatch();
+  const dispatch = useDispatch();
+
   const formik = useFormik({
     initialValues: {
-      fullName: "",
       email: "",
       password: "",
-      dateOfBirth: {
-        daty: "",
-        month: "",
-        year: "",
-      },
+      confirmPassword: "",
     },
     validationSchema,
     onSubmit: (values) => {
-      const { day, month, year } = values.dateOfBirth;
-      const dateOfBirth = `${year}-${month}-${day}`;
-      values.dateOfBirth = dateOfBirth;
+      const sendData = {
+        email: values.email,
+        password: values.password,
+      };
 
-      dispatch(registerUser(values))
-      console.log("form value ", values);
+      dispatch(registerUser(sendData));
+      console.log("Dữ liệu gửi API: ", sendData);
     },
   });
 
-  const handleDateChange = (name) => (event) => {
-    formik.setFieldValue("dateOfBirth", {
-      ...formik.values.dateOfBirth,
-      [name]: event.target.value,
-    });
-  };
   return (
     <form onSubmit={formik.handleSubmit}>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
+      <Stack spacing={3}>
+        {/* EMAIL */}
+        <div>
+          <Typography variant="subtitle2" sx={{ color: grey[600], mb: 0.5 }}>
+            Email
+          </Typography>
           <TextField
             fullWidth
-            label="Nhập họ và tên"
-            name="fullName"
-            variant="outlined"
-            size="large"
-            value={formik.values.fullName}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.fullName && Boolean(formik.errors.fullName)}
-            helperText={formik.touched.fullName && formik.errors.fullName}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="Email"
+            placeholder="tenban@example.com"
             name="email"
-            variant="outlined"
-            size="large"
             value={formik.values.email}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.email && Boolean(formik.errors.email)}
             helperText={formik.touched.email && formik.errors.email}
           />
-        </Grid>
+        </div>
 
-        <Grid item xs={12}>
+        {/* PASSWORD */}
+        <div>
+          <Typography variant="subtitle2" sx={{ color: grey[600], mb: 0.5 }}>
+            Mật khẩu
+          </Typography>
           <TextField
             fullWidth
-            label="Mật khẩu"
-            name="password"
-            variant="outlined"
-            size="large"
             type="password"
+            placeholder="Ít nhất 8 ký tự"
+            name="password"
             value={formik.values.password}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.password && Boolean(formik.errors.password)}
             helperText={formik.touched.password && formik.errors.password}
           />
-        </Grid>
-        <Grid item xs={4}>
-          <InputLabel>Ngày</InputLabel>
-          <Select
-            name="day"
+        </div>
+
+        {/* CONFIRM PASSWORD */}
+        <div>
+          <Typography variant="subtitle2" sx={{ color: grey[600], mb: 0.5 }}>
+            Nhập lại mật khẩu
+          </Typography>
+          <TextField
             fullWidth
-            onChange={handleDateChange("day")}
+            type="password"
+            placeholder="Nhập lại mật khẩu"
+            name="confirmPassword"
+            value={formik.values.confirmPassword}
+            onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            value={formik.values.dateOfBirth.day}
-          >
-            {days.map((day) => (
-              <MenuItem key={day} value={day}>
-                {day}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid>
-        <Grid item xs={4}>
-          <InputLabel>Tháng</InputLabel>
-          <Select
-            name="month"
-            fullWidth
-            onChange={handleDateChange("month")}
-            onBlur={formik.handleBlur}
-            value={formik.values.dateOfBirth.month}
-          >
-            {months.map((month) => (
-              <MenuItem key={month.label} value={month.value}>
-                {month.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid>
-        <Grid item xs={4}>
-          <InputLabel>Năm</InputLabel>
-          <Select
-            name="year"
-            fullWidth
-            onChange={handleDateChange("year")}
-            onBlur={formik.handleBlur}
-            value={formik.values.dateOfBirth.year}
-          >
-            {years.map((year) => (
-              <MenuItem key={year} value={year}>
-                {year}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid>
-        <Grid className="mt-20" item xs={12}>
-          <Button
-            sx={{ borderRadius: "29px", py: "15px", bgcolor: blue[500] }}
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-          >
-            Đăng kí
-          </Button>
-        </Grid>
-      </Grid>
+            error={
+              formik.touched.confirmPassword &&
+              Boolean(formik.errors.confirmPassword)
+            }
+            helperText={
+              formik.touched.confirmPassword && formik.errors.confirmPassword
+            }
+          />
+        </div>
+
+        <Button
+          sx={{
+            borderRadius: "18px",
+            py: "14px",
+            bgcolor: blue[500],
+            textTransform: "none",
+            fontSize: "1rem",
+            fontWeight: 700,
+          }}
+          type="submit"
+          fullWidth
+          variant="contained"
+        >
+          Đăng ký tài khoản
+        </Button>
+      </Stack>
     </form>
   );
 };

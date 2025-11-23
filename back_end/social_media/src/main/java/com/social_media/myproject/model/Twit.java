@@ -48,6 +48,6 @@ public class Twit {
     @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL)
     private List<Like> likes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TwitRetwitUser> retwits = new ArrayList<>();
 }

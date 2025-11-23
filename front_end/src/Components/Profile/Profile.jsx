@@ -105,9 +105,9 @@ dispatch(getUsersTweet(id))
               />
             )}
           </div>
-          <h1 className="text-gray-500">
-            @{auth.findUser?.fullName.split("").join("_").toLowerCase()}
-          </h1>
+            <h1 className="text-gray-500">
+              @{(auth.findUser?.fullName || "unknown").split("").join("_").toLowerCase()}
+            </h1>
         </div>
 
         <div className="mt-2 space-y-3">
