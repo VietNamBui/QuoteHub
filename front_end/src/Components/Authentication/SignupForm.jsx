@@ -12,6 +12,9 @@ import * as Yup from "yup";
 import { registerUser } from "../../Store/Auth/Action";
 
 const validationSchema = Yup.object({
+  fullName: Yup.string()
+    .min(2, "Tên quá ngắn")
+    .required("Bắt buộc phải nhập tên"),
   email: Yup.string()
     .email("Email không hợp lệ!")
     .required("Bắt buộc phải nhập email"),
@@ -28,6 +31,7 @@ const SignupForm = () => {
 
   const formik = useFormik({
     initialValues: {
+      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -35,6 +39,7 @@ const SignupForm = () => {
     validationSchema,
     onSubmit: (values) => {
       const sendData = {
+        fullName: values.fullName,
         email: values.email,
         password: values.password,
       };
@@ -47,6 +52,23 @@ const SignupForm = () => {
   return (
     <form onSubmit={formik.handleSubmit}>
       <Stack spacing={3}>
+        {/* FULL NAME */}
+        <div>
+          <Typography variant="subtitle2" sx={{ color: grey[600], mb: 0.5 }}>
+            Họ và tên
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Nguyễn Văn A"
+            name="fullName"
+            value={formik.values.fullName}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.fullName && Boolean(formik.errors.fullName)}
+            helperText={formik.touched.fullName && formik.errors.fullName}
+          />
+        </div>
+
         {/* EMAIL */}
         <div>
           <Typography variant="subtitle2" sx={{ color: grey[600], mb: 0.5 }}>

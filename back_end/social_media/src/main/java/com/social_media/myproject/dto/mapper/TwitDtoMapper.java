@@ -10,6 +10,7 @@ import com.social_media.myproject.dto.UserDto;
 import com.social_media.myproject.model.Twit;
 import com.social_media.myproject.model.TwitRetwitUser;
 import com.social_media.myproject.model.User;
+import com.social_media.myproject.model.Quote;
 import com.social_media.myproject.util.TwitUtil;
 
 public class TwitDtoMapper {
@@ -34,7 +35,7 @@ public class TwitDtoMapper {
 		twitDto.setCreatedAt(twit.getCreatedAt());
 		twitDto.setImage(twit.getImage());
 		twitDto.setTotalLikes(twit.getLikes().size());
-		twitDto.setTotalReplies(twit.getReplyTwits().size());
+		twitDto.setTotalReplies(countAllReplies(twit));
 		twitDto.setTotalRetweets(twit.getRetwits().size());
 		twitDto.setUser(user);
 		twitDto.setLiked(isLiked);
@@ -42,8 +43,52 @@ public class TwitDtoMapper {
 		twitDto.setRetwitUserId(retwitUserId);
 		twitDto.setReplyTwits(toTwitDtos(twit.getReplyTwits(), reqUser, visitedIds));
 		twitDto.setVideo(twit.getVideo());
+		
+		Quote quote = twit.getQuote();
+		if (quote != null) {
+			twitDto.setQuoteHighlight(quote.getHighlight());
+			twitDto.setQuoteId(quote.getId());
+			if (quote.getBook() != null) {
+				twitDto.setQuoteBookTitle(quote.getBook().getTitle());
+				twitDto.setQuoteBookAuthor(quote.getBook().getAuthor());
+				twitDto.setQuoteBookId(quote.getBook().getId());
+			}
+		}
+		// Nếu đây là reply, map thêm thông tin bài gốc
+		if (twit.getReplyFor() != null) {
+			Twit parent = twit.getReplyFor();
+			twitDto.setParentId(parent.getId());
+			twitDto.setParentContent(parent.getContent());
+			if (parent.getUser() != null) {
+				UserDto parentUser = UserDtoMapper.toUserDto(parent.getUser());
+				twitDto.setParentUser(parentUser);
+			}
+			Quote pQuote = parent.getQuote();
+			if (pQuote != null) {
+				twitDto.setParentQuoteHighlight(pQuote.getHighlight());
+				if (pQuote.getBook() != null) {
+					twitDto.setParentQuoteBookTitle(pQuote.getBook().getTitle());
+					twitDto.setParentQuoteBookAuthor(pQuote.getBook().getAuthor());
+				}
+			}
+		}
 			
 		return twitDto;
+	}
+
+	private static int countAllReplies(Twit twit) {
+		return countAllRepliesInternal(twit, new HashSet<>());
+	}
+
+	private static int countAllRepliesInternal(Twit twit, Set<Long> visitedIds) {
+		if (twit == null || twit.getReplyTwits() == null) return 0;
+		if (visitedIds.contains(twit.getId())) return 0;
+		visitedIds.add(twit.getId());
+		int total = twit.getReplyTwits().size();
+		for (Twit reply : twit.getReplyTwits()) {
+			total += countAllRepliesInternal(reply, visitedIds);
+		}
+		return total;
 	}
 	
 	public static List<TwitDto> toTwitDtos(List<Twit> twits, User reqUser) {
@@ -80,13 +125,40 @@ public class TwitDtoMapper {
 		twitDto.setCreatedAt(twit.getCreatedAt());
 		twitDto.setImage(twit.getImage());
 		twitDto.setTotalLikes(twit.getLikes().size());
-		twitDto.setTotalReplies(twit.getReplyTwits().size());
+		twitDto.setTotalReplies(countAllReplies(twit));
 		twitDto.setTotalRetweets(twit.getRetwits().size());
 		twitDto.setUser(user);
 		twitDto.setLiked(isLiked);
 		twitDto.setRetwit(isRetwited);
 		twitDto.setRetwitUserId(retwitUserId);
 		twitDto.setVideo(twit.getVideo());
+		
+		Quote quote = twit.getQuote();
+		if (quote != null) {
+			twitDto.setQuoteHighlight(quote.getHighlight());
+			if (quote.getBook() != null) {
+				twitDto.setQuoteBookTitle(quote.getBook().getTitle());
+				twitDto.setQuoteBookAuthor(quote.getBook().getAuthor());
+			}
+		}
+		// Map thêm bài gốc nếu có
+		if (twit.getReplyFor() != null) {
+			Twit parent = twit.getReplyFor();
+			twitDto.setParentId(parent.getId());
+			twitDto.setParentContent(parent.getContent());
+			if (parent.getUser() != null) {
+				UserDto parentUser = UserDtoMapper.toUserDto(parent.getUser());
+				twitDto.setParentUser(parentUser);
+			}
+			Quote pQuote = parent.getQuote();
+			if (pQuote != null) {
+				twitDto.setParentQuoteHighlight(pQuote.getHighlight());
+				if (pQuote.getBook() != null) {
+					twitDto.setParentQuoteBookTitle(pQuote.getBook().getTitle());
+					twitDto.setParentQuoteBookAuthor(pQuote.getBook().getAuthor());
+				}
+			}
+		}
 		
 	    // đệ quy qua replyTwits
 	    List<TwitDto> replyDtos = new ArrayList<>();

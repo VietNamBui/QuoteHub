@@ -92,8 +92,19 @@ public class UserServiceImplementation implements UserService {
 
 	@Override
 	public List<User> searchUser(String query) {
-		
-		return userRepository.searchUser(query);
+		if (query == null || query.trim().isEmpty()) {
+			return List.of();
+		}
+		String q = query.trim().toLowerCase();
+		// Lấy tất cả user rồi filter bằng Java cho chắc chắn, tránh phụ thuộc LIKE/collation
+		List<User> all = userRepository.findAll();
+		return all.stream()
+			.filter(u -> {
+				String name = u.getFullName() != null ? u.getFullName().toLowerCase() : "";
+				String email = u.getEmail() != null ? u.getEmail().toLowerCase() : "";
+				return name.contains(q) || email.contains(q);
+			})
+			.toList();
 	}
 
 }

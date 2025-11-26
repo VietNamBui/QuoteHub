@@ -13,7 +13,7 @@ import ProfileModel from "./ProfileModal";
 import { useDispatch, useSelector } from "react-redux";
 import { store } from "../../Store/store";
 import { findUserById, followUserAction } from "../../Store/Auth/Action";
-import { getUsersTweet } from "../../Store/Twit/Action";
+import { getUsersTweet, findTwitsByLikeContaineUser, findUserReplies } from "../../Store/Twit/Action";
 
 const Profile = () => {
   const [tabValue, setTabValue] = useState("1");
@@ -34,10 +34,15 @@ const Profile = () => {
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
 
-    if (newValue === 4) {
-      console.log("like twit");
-    } else if (newValue === 1) {
-      console.log("users twits");
+    if (newValue === "4") {
+      // Load danh sách twit mà user này đã like
+      dispatch(findTwitsByLikeContaineUser(id));
+    } else if (newValue === "2") {
+      // Các twit mà user đã reply
+      dispatch(findUserReplies(id));
+    } else if (newValue === "1") {
+      // Twits của user
+      dispatch(getUsersTweet(id));
     }
   };
 
@@ -64,16 +69,24 @@ dispatch(getUsersTweet(id))
       <section>
         <img
           className="w-[100%] h-[15rem] object-cover"
-          src="https://i.pinimg.com/736x/49/4d/3b/494d3b4fc5dd4a1c83820a6b0598c462.jpg"
-          alt=""
+          src={
+            auth.findUser?.backgroundImage
+              ? `http://localhost:5454${auth.findUser.backgroundImage}`
+              : "https://i.pinimg.com/736x/49/4d/3b/494d3b4fc5dd4a1c83820a6b0598c462.jpg"
+          }
+          alt="background"
         />
       </section>
       <section className="pl-6">
         <div className="flex justify-between items-start mt-5 h-[5rem]">
           <Avatar
             className="transform -translate-y-24"
-            alt="code with thanh"
-            src={auth.findUser?.image}
+            alt={auth.findUser?.fullName || "avatar"}
+            src={
+              auth.findUser?.image
+                ? `http://localhost:5454${auth.findUser.image}`
+                : undefined
+            }
             sx={{ width: "10rem", height: "10rem", border: "4px solid white" }}
           />
           {auth.findUser?.req_user ? (
@@ -159,9 +172,25 @@ dispatch(getUsersTweet(id))
                 <TweetCard item={item}/>
               ))}
             </TabPanel>
-            <TabPanel value="2">user replies</TabPanel>
+            <TabPanel value="2">
+              {twit.repliesTwits && twit.repliesTwits.length > 0 ? (
+                twit.repliesTwits.map((item) => (
+                  <TweetCard key={item.id} item={item} />
+                ))
+              ) : (
+                <p className="text-gray-500">User này chưa trả lời twit nào.</p>
+              )}
+            </TabPanel>
             <TabPanel value="3">Media</TabPanel>
-            <TabPanel value="4">Likes</TabPanel>
+            <TabPanel value="4">
+              {twit.likedTwits && twit.likedTwits.length > 0 ? (
+                twit.likedTwits.map((item) => (
+                  <TweetCard key={item.id} item={item} />
+                ))
+              ) : (
+                <p className="text-gray-500">User này chưa like twit nào.</p>
+              )}
+            </TabPanel>
           </TabContext>
         </Box>
       </section>

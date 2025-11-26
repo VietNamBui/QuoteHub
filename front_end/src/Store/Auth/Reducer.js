@@ -34,29 +34,79 @@ export const authReducer = (state = initialState, action) => {
       return { ...state, loading: false, error: null, jwt: action.payload };
 
     case GET_USER_PROFILE_SUCCESS:
-      return { ...state, loading: false, error: null, user: action.payload };
-    //case UPDATE_USER_SUCCESS:
-    // return {
-    //   ...state,
-    //  loading: false,
-    //  error: null,
-    //  user: action.payload,
-    //   updateUser: true,
-    //  };
+      // Chuẩn hoá lại user để FE luôn dùng field followings
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        user: action.payload
+          ? {
+              ...action.payload,
+              // Backend dùng "following" nên map sang "followings" cho RightPart, TweetCard dùng
+              followings:
+                action.payload.followings || action.payload.following || [],
+            }
+          : action.payload,
+      };
     case FIND_USER_BY_ID_SUCCESS:
-    case UPDATE_USER_SUCCESS:
       return {
         ...state,
         loading: false,
         error: null,
         findUser: action.payload,
       };
+    case UPDATE_USER_SUCCESS:
+      // Merge dữ liệu user mới trả về vào state hiện tại
+      const updated = action.payload;
+      const mergedUser = state.user
+        ? {
+            ...state.user,
+            ...updated,
+            // giữ lại followings đã chuẩn hoá
+            followings: state.user.followings || state.user.following || [],
+          }
+        : updated;
+      const mergedFindUser = state.findUser && state.findUser.id === updated.id
+        ? {
+            ...state.findUser,
+            ...updated,
+            // giữ lại cờ req_user để vẫn hiển thị Edit Profile cho chính mình
+            req_user: state.findUser.req_user,
+          }
+        : state.findUser;
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        user: mergedUser,
+        findUser: mergedFindUser,
+      };
     case FOLLOW_USER_SUCCESS:
       return {
         ...state,
         loading: false,
         error: null,
-        finduser: action.payload,
+        findUser: action.payload,
+        user: state.user
+          ? {
+              ...state.user,
+              followings: (() => {
+                // Ưu tiên dùng followings nếu đã chuẩn hoá, fallback sang following từ backend
+                const current =
+                  state.user.followings || state.user.following || [];
+                const updated = action.payload;
+                const exists = current.some((u) => u.id === updated.id);
+                // backend trả về user được follow/unfollow với cờ updated.followed
+                if (updated.followed && !exists) {
+                  return [...current, updated];
+                }
+                if (!updated.followed && exists) {
+                  return current.filter((u) => u.id !== updated.id);
+                }
+                return current;
+              })(),
+            }
+          : state.user,
       };
 
     case LOGOUT:
@@ -77,7 +127,8 @@ export const authReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        user: action.payload,
+        // lưu jwt nhận từ backend, không dùng payload làm user
+        jwt: action.payload?.jwt || state.jwt,
         loginSuccess: true,
       };
 

@@ -8,6 +8,7 @@ import {
   LIKE_TWEET_REQUEST,
   LIKE_TWEET_SUCCESS,
   REPLY_TWEET_SUCCESS,
+  TWEET_UPDATE_SUCCESS,
   RETWEET_FAILURE,
   RETWEET_REQUEST,
   RETWEET_SUCCESS,
@@ -20,6 +21,7 @@ import {
   USER_LIKE_TWEET_FAILURE,
   USER_LIKE_TWEET_REQUEST,
   USER_LIKE_TWEET_SUCCESS,
+  USER_REPLY_TWEET_SUCCESS,
 } from "./ActionType";
 const initialState = {
   loading: false,
@@ -27,6 +29,7 @@ const initialState = {
   error: null,
   twits: [],
   twit: null,
+  repliesTwits: [],
 };
 export const twitReducer = (state = initialState, action) => {
   switch (action.type) {
@@ -68,12 +71,26 @@ export const twitReducer = (state = initialState, action) => {
         error: null,
         likedTwits: action.payload,
       };
+    case USER_REPLY_TWEET_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        repliesTwits: action.payload,
+      };
     case LIKE_TWEET_SUCCESS:
       return {
         ...state,
         loading: false,
         error: null,
         like: action.payload,
+        twits: state.twits.map((t) =>
+          t.id === action.payload.id ? action.payload : t
+        ),
+        twit:
+          state.twit && state.twit.id === action.payload.id
+            ? action.payload
+            : state.twit,
       };
     case TWEET_DELETE_SUCCESS:
       return {
@@ -82,15 +99,32 @@ export const twitReducer = (state = initialState, action) => {
         error: null,
         twits: state.twits.filter((twit) => twit.id !== action.payload),
       };
+    case TWEET_UPDATE_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        twits: state.twits.map((t) =>
+          t.id === action.payload.id ? action.payload : t
+        ),
+        twit:
+          state.twit && state.twit.id === action.payload.id
+            ? action.payload
+            : state.twit,
+      };
     case RETWEET_SUCCESS:
       return {
         ...state,
         loading: false,
         error: null,
         retwit: action.payload.retwit,
-        twits: state.twits.map(t =>
+        twits: state.twits.map((t) =>
           t.id === action.payload.id ? action.payload : t
         ),
+        twit:
+          state.twit && state.twit.id === action.payload.id
+            ? action.payload
+            : state.twit,
       };
     case FIND_TWEET_BY_ID_SUCCESS:
     case REPLY_TWEET_SUCCESS:
@@ -98,7 +132,10 @@ export const twitReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: null,
-        retwit: action.payload,
+        twit: action.payload,
+        twits: state.twits.map(t =>
+          t.id === action.payload.id ? action.payload : t
+        ),
       };
 
     default:

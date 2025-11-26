@@ -40,10 +40,7 @@ public class UserDtoMapper {
 			userDto.setImage(user.getImage());
 			userDtos.add(userDto);
 		}
-		
-		
-		
-		return null;
+		return userDtos;
 	}
 	
 	

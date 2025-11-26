@@ -34,4 +34,19 @@ public class TwitDto {
 	
 	private List<TwitDto> replyTwits;
 
+	// Thông tin câu quote gắn với twit (nếu có)
+	private String quoteHighlight;
+	private String quoteBookTitle;
+	private String quoteBookAuthor;
+	private Long quoteId;
+	private Long quoteBookId;
+	
+	// Thông tin bài gốc nếu đây là reply
+	private Long parentId;
+	private String parentContent;
+	private UserDto parentUser;
+	private String parentQuoteHighlight;
+	private String parentQuoteBookTitle;
+	private String parentQuoteBookAuthor;
+
 }

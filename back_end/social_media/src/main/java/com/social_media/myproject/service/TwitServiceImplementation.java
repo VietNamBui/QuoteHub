@@ -2,15 +2,26 @@ package com.social_media.myproject.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.social_media.myproject.dto.BookTrendDto;
+import com.social_media.myproject.dto.FriendBookTrendDto;
 import com.social_media.myproject.exception.TwitException;
 import com.social_media.myproject.exception.UserException;
+import com.social_media.myproject.model.Book;
+import com.social_media.myproject.model.Quote;
 import com.social_media.myproject.model.Twit;
 import com.social_media.myproject.model.TwitRetwitUser;
 import com.social_media.myproject.model.User;
+import com.social_media.myproject.repository.LikeRepository;
+import com.social_media.myproject.repository.QuoteRepository;
 import com.social_media.myproject.repository.TwitRepository;
 import com.social_media.myproject.request.TwitReplyReques;
 
@@ -20,8 +31,17 @@ public class TwitServiceImplementation implements TwitService{
 	@Autowired
 	private TwitRepository twitRepository;
 
+	@Autowired
+	private QuoteRepository quoteRepository;
+
 	@Override
 	public Twit createTwit(Twit req, User user) throws UserException {
+		if (req.getQuote() == null || req.getQuote().getId() == null) {
+			throw new RuntimeException("Quote is required to create a twit");
+		}
+		
+		Quote quote = quoteRepository.findById(req.getQuote().getId())
+				.orElseThrow(() -> new RuntimeException("Quote not found with id " + req.getQuote().getId()));
 		
 		Twit twit = new Twit();
 		twit.setContent(req.getContent());
@@ -31,13 +51,63 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setIsReply(false);
 		twit.setIsTwit(true);
 		twit.setVideo(req.getVideo());
+		twit.setQuote(quote);
 		
 		return twitRepository.save(twit);
 	}
 
 	@Override
-	public List<Twit> findAllTwit() {
-		return twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+	public List<Twit> findAllTwit(User currentUser) {
+		// Lấy toàn bộ twit chính (isTwit = true), sort theo thời gian mới nhất
+		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		if (currentUser == null || all.isEmpty()) {
+			return all;
+		}
+		
+		// Danh sách userId mà currentUser đang follow
+		Set<Long> followingIds = currentUser.getFollowings() == null
+			? new HashSet<>()
+			: currentUser.getFollowings().stream()
+				.map(User::getId)
+				.collect(Collectors.toSet());
+		
+		// Nếu chưa follow ai thì trả luôn danh sách global
+		if (followingIds.isEmpty()) {
+			return all;
+		}
+		
+		List<Twit> priority = new ArrayList<>(); // twit của người mình follow
+		List<Twit> others = new ArrayList<>();   // twit của user khác
+		
+		for (Twit t : all) {
+			if (t.getUser() != null && followingIds.contains(t.getUser().getId())) {
+				priority.add(t);
+			} else {
+				others.add(t);
+			}
+		}
+		
+		// Trộn: cứ 4 twit từ following thì chèn 1 twit bất kỳ từ others
+		List<Twit> mixed = new ArrayList<>();
+		int insertEvery = 5; // 4 following + 1 random khác
+		int i = 0, j = 0, count = 0;
+		
+		while (i < priority.size() || j < others.size()) {
+			if (i < priority.size()) {
+				mixed.add(priority.get(i++));
+				count++;
+			}
+			if (count > 0 && count % insertEvery == 0 && j < others.size()) {
+				mixed.add(others.get(j++));
+			}
+		}
+		
+		// Nếu vẫn còn twit khác thì thêm nốt vào cuối
+		while (j < others.size()) {
+			mixed.add(others.get(j++));
+		}
+		
+		return mixed;
 	}
 
 //	@Override
@@ -99,6 +169,23 @@ public class TwitServiceImplementation implements TwitService{
 	}
 
 	@Override
+	public Twit updateTwitContent(Long twitId, String content, Long quoteId, User currentUser) throws TwitException, UserException {
+		Twit twit = findById(twitId);
+		if (currentUser == null || twit.getUser() == null || !twit.getUser().getId().equals(currentUser.getId())) {
+			throw new UserException("you can't edit another user's twit");
+		}
+		if (content != null) {
+			twit.setContent(content);
+		}
+		if (quoteId != null) {
+			Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new TwitException("Quote not found with id " + quoteId));
+			twit.setQuote(quote);
+		}
+		return twitRepository.save(twit);
+	}
+
+	@Override
 	public Twit removeFromRetwit(Long twitId, User user) throws TwitException, UserException {
 		// TODO Auto-generated method stub
 		return null;
@@ -129,14 +216,145 @@ public class TwitServiceImplementation implements TwitService{
 
 	@Override
 	public List<Twit> getUserTwit(User user) {
-		// TODO Auto-generated method stub
-		return twitRepository.findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(user, user.getId());
+		// Lấy tất cả twit chính rồi lọc theo user
+		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		if (all.isEmpty() || user == null) return List.of();
+		Long userId = user.getId();
+		return all.stream()
+			.filter(t -> t.getUser() != null && t.getUser().getId().equals(userId))
+			.toList();
+	}
+
+	@Override
+	public List<Twit> getUserReplies(User user) {
+		if (user == null) return List.of();
+		Long userId = user.getId();
+		List<Twit> all = twitRepository.findAll();
+		if (all.isEmpty()) return List.of();
+		java.util.Set<Long> parentIds = new java.util.HashSet<>();
+		List<Twit> parents = new java.util.ArrayList<>();
+		for (Twit t : all) {
+			if (Boolean.TRUE.equals(t.getIsReply())
+				&& t.getUser() != null && t.getUser().getId().equals(userId)
+				&& t.getReplyFor() != null) {
+				Twit parent = t.getReplyFor();
+				if (!parentIds.contains(parent.getId())) {
+					parentIds.add(parent.getId());
+					parents.add(parent);
+				}
+			}
+		}
+		return parents;
 	}
 
 	@Override
 	public List<Twit> findByLikesContainsUser(User user) {
 		
 		return twitRepository.findByLikesUser_id(user.getId());
+	}
+
+	@Override
+	public List<BookTrendDto> getTrendingBooks() {
+		// Lấy tất cả twit chính gắn với quote & book
+		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		if (all.isEmpty()) return List.of();
+
+		Map<Long, Long> countByBook = all.stream()
+			.filter(t -> t.getQuote() != null && t.getQuote().getBook() != null)
+			.collect(Collectors.groupingBy(
+					 t -> t.getQuote().getBook().getId(),
+					 Collectors.counting()
+			));
+
+		// Map sang DTO và sort theo số lượng giảm dần, lấy top 5
+		List<BookTrendDto> result = countByBook.entrySet().stream()
+			.sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+			.limit(5)
+			.map(e -> {
+				Long bookId = e.getKey();
+				long count = e.getValue();
+				Book book = all.stream()
+					.filter(t -> t.getQuote() != null && t.getQuote().getBook() != null
+							&& t.getQuote().getBook().getId().equals(bookId))
+					.map(t -> t.getQuote().getBook())
+					.findFirst()
+					.orElse(null);
+				if (book == null) return null;
+				return new BookTrendDto(
+					book.getId(),
+					book.getTitle(),
+					book.getAuthor(),
+					count
+				);
+			})
+			.filter(dto -> dto != null)
+			.collect(Collectors.toList());
+
+		return result;
+	}
+
+	@Override
+	public List<FriendBookTrendDto> getFriendsTrendingBooks(User currentUser) {
+		if (currentUser == null || currentUser.getFollowings() == null || currentUser.getFollowings().isEmpty()) {
+			return List.of();
+		}
+
+		Set<Long> followingIds = currentUser.getFollowings().stream()
+			.map(User::getId)
+			.collect(Collectors.toSet());
+
+		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		if (all.isEmpty()) return List.of();
+
+		// Chỉ lấy twit của bạn bè và có book
+		List<Twit> friendTwits = all.stream()
+			.filter(t -> t.getUser() != null && followingIds.contains(t.getUser().getId()))
+			.filter(t -> t.getQuote() != null && t.getQuote().getBook() != null)
+			.toList();
+
+		if (friendTwits.isEmpty()) return List.of();
+
+		// Đếm số twit theo book
+		Map<Long, Long> twitCountByBook = friendTwits.stream()
+			.collect(Collectors.groupingBy(
+					 t -> t.getQuote().getBook().getId(),
+					 Collectors.counting()
+			));
+
+		// Đếm số bạn khác nhau theo book
+		Map<Long, Long> friendCountByBook = friendTwits.stream()
+			.collect(Collectors.groupingBy(
+					 t -> t.getQuote().getBook().getId(),
+					 Collectors.mapping(t -> t.getUser().getId(), Collectors.toSet())
+			))
+			.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, e -> (long) e.getValue().size()));
+
+		List<FriendBookTrendDto> result = twitCountByBook.entrySet().stream()
+			.sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+			.limit(5)
+			.map(e -> {
+				Long bookId = e.getKey();
+				long twitCount = e.getValue();
+				long friendCount = friendCountByBook.getOrDefault(bookId, 0L);
+				Book book = friendTwits.stream()
+					.filter(t -> t.getQuote().getBook().getId().equals(bookId))
+					.map(t -> t.getQuote().getBook())
+					.findFirst()
+					.orElse(null);
+				if (book == null) return null;
+				return new FriendBookTrendDto(
+					book.getId(),
+					book.getTitle(),
+					book.getAuthor(),
+					friendCount,
+					twitCount
+				);
+			})
+			.filter(dto -> dto != null)
+			.collect(Collectors.toList());
+
+		return result;
 	}
 
 }

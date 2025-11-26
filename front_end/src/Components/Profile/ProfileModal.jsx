@@ -31,31 +31,43 @@ export default function ProfileModal({ open, handleClose }) {
   const [uploading, setUploading] = React.useState(false);
   const dispatch = useDispatch();
   const [selectedImage, setSelectedImage] = React.useState("");
-  const {auth} = useSelector((store)=>store);
+  const [selectedBgImage, setSelectedBgImage] = React.useState("");
+  const { auth } = useSelector((store) => store);
 
   const handleSubmit = (values) => {
     dispatch(updateUserProfile(values));
     console.log("handle submit", values);
     setSelectedImage("");
+    setSelectedBgImage("");
+    handleClose();
   };
 
   const formik = useFormik({
     initialValues: {
-      fullName: "",
-      website: "",
-      location: "",
-      bio: "",
-      backgroundImage: "",
-      image: "",
+      fullName: auth.user?.fullName || "",
+      website: auth.user?.website || "",
+      location: auth.user?.location || "",
+      bio: auth.user?.bio || "",
+      backgroundImage: auth.user?.backgroundImage || "",
+      image: auth.user?.image || "",
     },
+    enableReinitialize: true,
     onSubmit: handleSubmit,
   });
   const handleImageChange = async (event) => {
     setUploading(true);
-    const { name } = event.target;
-    const file = await uploadToCloudnary(event.target.file[0]);
-    formik.setFieldValue(name, file);
-    setSelectedImage(file);
+    const { name, files } = event.target;
+    if (!files || !files[0]) {
+      setUploading(false);
+      return;
+    }
+    const url = await uploadToCloudnary(files[0]);
+    formik.setFieldValue(name, url);
+    if (name === "backgroundImage") {
+      setSelectedBgImage(url);
+    } else if (name === "image") {
+      setSelectedImage(url);
+    }
     setUploading(false);
   };
   console.log("auth ",auth)
@@ -84,8 +96,13 @@ export default function ProfileModal({ open, handleClose }) {
                   <div className="relative">
                     <img
                       className="w-full h-[12rem] object-cover object-center"
-                      src="https://i.pinimg.com/736x/49/4d/3b/494d3b4fc5dd4a1c83820a6b0598c462.jpg"
-                      alt=""
+                      src={
+                        selectedBgImage ||
+                        (formik.values.backgroundImage
+                          ? `http://localhost:5454${formik.values.backgroundImage}`
+                          : "https://i.pinimg.com/736x/49/4d/3b/494d3b4fc5dd4a1c83820a6b0598c462.jpg")
+                      }
+                      alt="background"
                     />
                     <input
                       type="file"
@@ -103,7 +120,14 @@ export default function ProfileModal({ open, handleClose }) {
                         height: "10rem",
                         border: "4px solid white",
                       }}
-                      src={ selectedImage || auth.user?.image || "" }
+                      src={
+                        selectedImage ||
+                        (formik.values.image
+                          ? `http://localhost:5454${formik.values.image}`
+                          : auth.user?.image
+                          ? `http://localhost:5454${auth.user.image}`
+                          : "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg")
+                      }
                     />
                     <input
                       className="absolute top-0 left-0 w-[10rem] h-full opacity-0 cursor-pointer"

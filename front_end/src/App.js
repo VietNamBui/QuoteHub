@@ -1,4 +1,4 @@
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import HomePage from './Components/HomePage/HomePage';
 import Authentication from './Components/Authentication/Authentication';
@@ -11,22 +11,22 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function App() {
-  const jwt = localStorage.getItem("jwt");
   const { auth } = useSelector(store => store);
+  // ưu tiên jwt trong redux, fallback sang localStorage khi reload
+  const jwt = auth.jwt || localStorage.getItem("jwt");
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (jwt) {
       dispatch(getUserProfile(jwt));
-      navigate("/");
     }
-  }, []); // chỉ chạy 1 lần
+  }, [jwt, dispatch]);
 
   return (
     <div>
       <Routes>
-        <Route path='/*' element={auth.user ? <HomePage /> : <Authentication />} />
+        {/* Dùng jwt để quyết định đã đăng nhập hay chưa, tránh phụ thuộc vào user */}
+        <Route path='/*' element={jwt ? <HomePage /> : <Authentication />} />
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />

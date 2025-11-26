@@ -18,12 +18,13 @@ const style = {
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: 600,
-  bgcolor: "background.paper",
-  border: "none",
-  boxShadow: 24,
+  bgcolor: "rgba(255,255,255,0.95)",
+  border: "1px solid rgba(148,163,184,0.3)",
+  boxShadow: "0 18px 45px rgba(15,23,42,0.18)",
   p: 4,
   outline: "none",
-  borderRadius: 4,
+  borderRadius: 24,
+  backdropFilter: "blur(18px)",
 };
 
 export default function ReplyModal({ handleClose, open, item }) {
@@ -33,9 +34,8 @@ export default function ReplyModal({ handleClose, open, item }) {
   const dispatch=useDispatch();
 
   const handleSubmit = (values) => {
-  dispatch(createTweetReply(values))
-  handleClose()
-    console.log("handle submit", values);
+    dispatch(createTweetReply(values))
+    handleClose()
   };
   const formik = useFormik({
     initialValues: {
@@ -43,8 +43,13 @@ export default function ReplyModal({ handleClose, open, item }) {
       image: "",
       twitId:item?.id
     },
+    enableReinitialize: true,
     onSubmit: handleSubmit,
   });
+
+  // Nếu chưa có item (đang load hoặc gọi sai) thì không render để tránh lỗi
+  if (!item) return null;
+
   const handleSelectImage = (event) => {
     setUploadingImage(true);
     const imgUrl = event.target.files[0];
@@ -62,8 +67,8 @@ export default function ReplyModal({ handleClose, open, item }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          {item.replyTwits && item.replyTwits.length > 0 && (
-            <div className="ml-10 mt-4 space-y-4">
+          {item?.replyTwits && item.replyTwits.length > 0 && (
+            <div className="ml-10 mt-2 mb-4 space-y-4 max-h-72 overflow-y-auto pr-4 border-b border-slate-200 pb-4">
               {item.replyTwits.map((reply) => (
                 <div key={reply.id} className="flex space-x-5">
                   <Avatar

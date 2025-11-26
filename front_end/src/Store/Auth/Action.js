@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 export const loginUser = (loginData) => async (dispatch) => {
   try {
     dispatch({ type: "LOGIN_REQUEST" });
+
     // xóa token cũ trước khi đăng nhập
     localStorage.removeItem("jwt");
     const { data } = await axios.post(`${API_BASE_URL}/auth/signin`, loginData);
@@ -15,6 +16,12 @@ export const loginUser = (loginData) => async (dispatch) => {
     }
     // dispatch({ type: LOGIN_USER_SUCCESS, payload: data.jwt });
     dispatch({ type: "LOGIN_SUCCESS", payload: data });
+
+    // Sau khi đăng nhập thành công, load luôn profile để Navigation, RightPart có user ngay
+    if (data.jwt) {
+      dispatch(getUserProfile(data.jwt));
+    }
+
   } catch (error) {
     console.log("error ", error);
     // dispatch({ type: LOGIN_USER_FAILURE, payload: error.message });

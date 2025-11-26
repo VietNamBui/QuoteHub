@@ -35,7 +35,7 @@ public class AIClassificationService {
             "Đoạn trích:\n" + text;
 
         Map<String, Object> body = Map.of(
-            "model", "deepseek/deepseek-chat-v3.1:free",
+            "model", "deepseek/deepseek-chat-v3-0324:free",
             "messages", List.of(
                 Map.of("role", "user", "content", prompt)
             ),
