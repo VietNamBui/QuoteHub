@@ -136,19 +136,24 @@ const TweetCard = ({ item, onOpenDetail }) => {
         <Avatar
           onClick={() => navigate(`/profile/${item?.user.id}`)}
           className="cursor-pointer"
-          alt={item?.user?.fullName}
+          alt={item?.user?.fullName || item?.user?.email || "U"}
           src={(() => {
-            const img = item?.user?.image;
-            if (!img) {
-              return "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg";
+            if (item?.user?.id && item.user.id === auth.user?.id && auth.user?.image) {
+              const img = auth.user.image;
+              return img.startsWith("/") ? `http://localhost:5454${img}` : img;
             }
-            // Nếu backend trả về path tương đối như "/uploads/..." thì prefix host backend
+            const img = item?.user?.image;
+            if (!img) return undefined;
             if (img.startsWith("/")) {
               return `http://localhost:5454${img}`;
             }
             return img;
           })()}
-        />
+        >
+          {!item?.user?.image && (item?.user?.fullName || item?.user?.email)
+            ? (item.user.fullName || item.user.email).trim().charAt(0).toUpperCase()
+            : null}
+        </Avatar>
         <div className="w-full">
           <div className="flex justify-between items-center">
             <div className="flex cursor-pointer items-center space-x-2">
@@ -159,11 +164,6 @@ const TweetCard = ({ item, onOpenDetail }) => {
                   .join("_")
                   .toLowerCase()} . 2m
               </span>
-              <img
-                className="ml-2 w-5 h-5"
-                src="https://i.pinimg.com/736x/65/18/4d/65184d64749f5795911b78d51d9221df.jpg"
-                alt=""
-              />
             </div>
             <div className="flex items-center space-x-2">
               {item?.user?.id !== currentUserId && (
@@ -276,19 +276,6 @@ const TweetCard = ({ item, onOpenDetail }) => {
                   />
                 )}
                 <p>{item?.totalLikes}</p>
-              </div>
-              <div className="space-x-3 flex items-center text-gray-600">
-                <BarChartIcon
-                  className="cursor-pointer"
-                  onClick={handleOpenReplyModel}
-                />
-                <p>430</p>
-              </div>
-              <div className="space-x-3 flex items-center text-gray-600">
-                <BarChartIcon
-                  className="cursor-pointer"
-                  onClick={handleOpenReplyModel}
-                />
               </div>
             </div>
           </div>

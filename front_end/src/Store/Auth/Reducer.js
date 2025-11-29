@@ -21,13 +21,15 @@ const initialState = {
   jwt: null,
   registerSuccess: false,
   loginSuccess: false,
+  pendingEmail: null,
 };
+
 export const authReducer = (state = initialState, action) => {
   switch (action.type) {
     case LOGIN_USER_REQUEST:
     case REGISTER_USER_REQUEST:
     case GET_USER_PROFILE_REQUEST:
-      return { ...state, loading: true, error: null };
+      return { ...state, loading: true, error: null, loginSuccess: false };
 
     case LOGIN_USER_SUCCESS:
     case REGISTER_USER_SUCCESS:
@@ -48,6 +50,7 @@ export const authReducer = (state = initialState, action) => {
             }
           : action.payload,
       };
+
     case FIND_USER_BY_ID_SUCCESS:
       return {
         ...state,
@@ -55,6 +58,7 @@ export const authReducer = (state = initialState, action) => {
         error: null,
         findUser: action.payload,
       };
+
     case UPDATE_USER_SUCCESS:
       // Merge dữ liệu user mới trả về vào state hiện tại
       const updated = action.payload;
@@ -81,6 +85,7 @@ export const authReducer = (state = initialState, action) => {
         user: mergedUser,
         findUser: mergedFindUser,
       };
+
     case FOLLOW_USER_SUCCESS:
       return {
         ...state,
@@ -116,9 +121,10 @@ export const authReducer = (state = initialState, action) => {
     case REGISTER_USER_FAILURE:
     case GET_USER_PROFILE_FAILURE:
       return { ...state, loading: false, error: action.payload };
+
     case "REGISTER_REQUEST":
     case "LOGIN_REQUEST":
-      return { ...state, loading: true, error: null };
+      return { ...state, loading: true, error: null, loginSuccess: false };
 
     case "REGISTER_SUCCESS":
       return { ...state, loading: false, registerSuccess: true };
@@ -130,11 +136,21 @@ export const authReducer = (state = initialState, action) => {
         // lưu jwt nhận từ backend, không dùng payload làm user
         jwt: action.payload?.jwt || state.jwt,
         loginSuccess: true,
+        pendingEmail: null,
+      };
+
+    case "LOGIN_2FA_REQUIRED":
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        pendingEmail: action.payload,
       };
 
     case "REGISTER_FAIL":
     case "LOGIN_FAIL":
       return { ...state, loading: false, error: action.payload };
+
     default:
       return state;
   }

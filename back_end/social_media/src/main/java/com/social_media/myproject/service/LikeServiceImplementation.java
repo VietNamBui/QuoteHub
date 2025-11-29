@@ -24,6 +24,9 @@ public class LikeServiceImplementation implements LikeService{
 	
 	@Autowired
 	private TwitRepository twitRepository;
+
+	@Autowired
+	private NotificationService notificationService;
 	
 	@Override
 	public Like likeTwit(Long twitId, User user) throws UserException, TwitException {
@@ -44,6 +47,11 @@ public class LikeServiceImplementation implements LikeService{
 		
 		twit.getLikes().add(savedLike);
 		twitRepository.save(twit);
+		
+		// Tạo notification cho chủ twit khi có người khác like
+		if (twit.getUser() != null) {
+			notificationService.createLikeNotification(user, twit.getUser(), twit);
+		}
 		
 		return savedLike;
 	}

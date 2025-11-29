@@ -17,11 +17,12 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 600,
+  width: 480,
+  maxHeight: "90vh",
   bgcolor: "background.paper",
   border: "none",
   boxShadow: 24,
-  p: 4,
+  p: 3,
   outline: "none",
   borderRadius: 4,
 };
@@ -90,7 +91,7 @@ export default function ProfileModal({ open, handleClose }) {
               </div>
               <Button type="submit">Save</Button>
             </div>
-            <div className="hideScrollBar overflow-y-scroll overflow-x-hidden h-[80vh]">
+            <div className="hideScrollBar overflow-y-auto overflow-x-hidden">
               <React.Fragment>
                 <div className="w-full">
                   <div className="relative">
@@ -120,14 +121,21 @@ export default function ProfileModal({ open, handleClose }) {
                         height: "10rem",
                         border: "4px solid white",
                       }}
-                      src={
-                        selectedImage ||
-                        (formik.values.image
-                          ? `http://localhost:5454${formik.values.image}`
-                          : auth.user?.image
-                          ? `http://localhost:5454${auth.user.image}`
-                          : "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg")
-                      }
+                      src={(() => {
+                        if (selectedImage) {
+                          // Nếu upload trả về path tương đối "/uploads/..." thì prefix host backend
+                          return selectedImage.startsWith("/")
+                            ? `http://localhost:5454${selectedImage}`
+                            : selectedImage;
+                        }
+                        if (formik.values.image) {
+                          return `http://localhost:5454${formik.values.image}`;
+                        }
+                        if (auth.user?.image) {
+                          return `http://localhost:5454${auth.user.image}`;
+                        }
+                        return "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg";
+                      })()}
                     />
                     <input
                       className="absolute top-0 left-0 w-[10rem] h-full opacity-0 cursor-pointer"
@@ -163,35 +171,6 @@ export default function ProfileModal({ open, handleClose }) {
                   error={formik.touched.bio && Boolean(formik.errors.bio)}
                   helperText={formik.touched.bio && formik.errors.bio}
                 />
-                <TextField
-                  fullWidth
-                  id="website"
-                  name="website"
-                  label="Website"
-                  value={formik.values.website}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.website && Boolean(formik.errors.website)
-                  }
-                  helperText={formik.touched.website && formik.errors.website}
-                />
-                <TextField
-                  fullWidth
-                  id="location"
-                  name="location"
-                  label="Location"
-                  value={formik.values.location}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.location && Boolean(formik.errors.location)
-                  }
-                  helperText={formik.touched.location && formik.errors.location}
-                />
-                <div className="my-3">
-                  <p className="text-lg">Birth date . Edit</p>
-                  <p className="text-2xl">6/6/2003</p>
-                </div>
-                <p className="py-3 text-lg">Edit Professional Profile</p>
               </div>
             </div>
           </form>

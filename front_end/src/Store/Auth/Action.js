@@ -11,10 +11,16 @@ export const loginUser = (loginData) => async (dispatch) => {
     localStorage.removeItem("jwt");
     const { data } = await axios.post(`${API_BASE_URL}/auth/signin`, loginData);
     console.log("logedin user ", data);
+
+    if (data.twoFactorRequired) {
+      // Bước 1 thành công, yêu cầu nhập OTP
+      dispatch({ type: "LOGIN_2FA_REQUIRED", payload: data.email });
+      return;
+    }
+
     if (data.jwt) {
       localStorage.setItem("jwt", data.jwt);
     }
-    // dispatch({ type: LOGIN_USER_SUCCESS, payload: data.jwt });
     dispatch({ type: "LOGIN_SUCCESS", payload: data });
 
     // Sau khi đăng nhập thành công, load luôn profile để Navigation, RightPart có user ngay
@@ -24,11 +30,13 @@ export const loginUser = (loginData) => async (dispatch) => {
 
   } catch (error) {
     console.log("error ", error);
+    const msg = error.response?.data?.message || "Đăng nhập thất bại";
     // dispatch({ type: LOGIN_USER_FAILURE, payload: error.message });
     dispatch({
         type: "LOGIN_FAIL",
-        payload: error.response?.data?.message || "Lỗi đăng nhập",
+        payload: msg,
       });
+    toast.error(msg);
   }
 };
 

@@ -110,13 +110,6 @@ dispatch(getUsersTweet(id))
         <div>
           <div className="flex items-center">
             <h1 className="font-bold text-lg">{auth.findUser?.fullName}</h1>
-            {true && (
-              <img
-                className="ml-2 w-5 h-5"
-                src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-                alt=""
-              />
-            )}
           </div>
             <h1 className="text-gray-500">
               @{(auth.findUser?.fullName || "unknown").split("").join("_").toLowerCase()}
@@ -127,20 +120,6 @@ dispatch(getUsersTweet(id))
           <p>
             {auth.findUser?.bio}
           </p>
-          <div className="py-1 flex space-x-5">
-            <div className="flex items-center text-gray-500">
-              <BusinessCenterIcon />
-              <p className="ml-2">Education</p>
-            </div>
-            <div className="flex items-center text-gray-500">
-              <LocationOnIcon />
-              <p className="ml-2">{auth.findUser?.location}</p>
-            </div>
-            <div className="flex items-center text-gray-500">
-              <CalendarMonthIcon />
-              <p className="ml-2">Tham gia vao 2025</p>
-            </div>
-          </div>
           <div className="flex items-center space-x-5">
             <div className="flex items-center space-x-1 font-semibold">
               <span>{auth.findUser?.followings?.length}</span>

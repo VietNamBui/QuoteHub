@@ -135,6 +135,15 @@ public class TwitController {
 		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
 	}
 
+	@GetMapping("/feed")
+	public ResponseEntity<List<TwitDto>> getFeedTwits(
+			@RequestHeader("Authorization") String jwt) throws UserException, TwitException {
+		User user = userService.findUserProfileByJwt(jwt);
+		List<Twit> twits = twitService.getFeedTwits(user);
+		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, user);
+		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
+	}
+
 	// Twits mà user đã reply (isReply=true)
 	@GetMapping("/user/{userId}/replies")
 	public ResponseEntity<List<TwitDto>> getUserReplies(@PathVariable Long userId,
@@ -166,12 +175,13 @@ public class TwitController {
 	@GetMapping("/user/{userId}/likes")
 	public ResponseEntity<List<TwitDto>> findTwitByLikesContainesUser(@PathVariable Long userId,
 		@RequestHeader("Authorization") String jwt) throws UserException, TwitException {
+		// Xác thực JWT nhưng dữ liệu dựa trên userId của profile đang xem
+		userService.findUserProfileByJwt(jwt);
+		User targetUser = userService.findUserById(userId);
 		
-		User user = userService.findUserProfileByJwt(jwt);
+		List<Twit> twits = twitService.findByLikesContainsUser(targetUser);
 		
-		List<Twit> twits = twitService.findByLikesContainsUser(user);
-		
-		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, user);
+		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, targetUser);
 		
 		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
 	}

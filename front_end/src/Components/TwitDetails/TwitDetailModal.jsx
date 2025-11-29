@@ -89,70 +89,69 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
     const indent = depth > 0 ? 2 : 0;
 
     return (
-    <Box sx={{ display: "flex", mb: 2.5, pl: indent }}>
-      <Avatar
-        alt={node.user?.fullName}
-        src={
-          node.user?.avatar ||
-          "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-        }
-        sx={{ mr: 1.5, cursor: "pointer", width: depth > 0 ? 32 : 40, height: depth > 0 ? 32 : 40 }}
-        onClick={() => navigate(`/profile/${node.user?.id}`)}
-      />
-      <Box sx={{ flex: 1 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Box>
-            <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>
-              {node.user?.fullName}
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
-              @{node.user?.username} · 2m
-            </Typography>
+      <Box sx={{ display: "flex", mb: 2.5, pl: indent }}>
+        <Avatar
+          alt={node.user?.fullName || node.user?.email || "U"}
+          src={node.user?.avatar || undefined}
+          sx={{ mr: 1.5, cursor: "pointer", width: depth > 0 ? 32 : 40, height: depth > 0 ? 32 : 40 }}
+          onClick={() => navigate(`/profile/${node.user?.id}`)}
+        >
+          {!node.user?.avatar && (node.user?.fullName || node.user?.email)
+            ? (node.user.fullName || node.user.email).trim().charAt(0).toUpperCase()
+            : null}
+        </Avatar>
+        <Box sx={{ flex: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box>
+              <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>
+                {node.user?.fullName || node.user?.email}
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
+                @{node.user?.username || node.user?.email} · 2m
+              </Typography>
+            </Box>
+            <Button
+              size="small"
+              sx={{ textTransform: "none", fontSize: 12, color: "#2563eb" }}
+              onClick={() => handleOpenReplyFor(node)}
+            >
+              Trả lời
+            </Button>
           </Box>
-          <Button
-            size="small"
-            sx={{ textTransform: "none", fontSize: 12, color: "#2563eb" }}
-            onClick={() => handleOpenReplyFor(node)}
-          >
-            Trả lời
-          </Button>
+          <Typography sx={{ mt: 1, fontSize: 14, color: "#0f172a" }}>
+            {displayContent}
+          </Typography>
+          {isLong && (
+            <Button
+              size="small"
+              sx={{
+                mt: 0.5,
+                textTransform: "none",
+                fontSize: 12,
+                padding: 0,
+                minWidth: "auto",
+                color: "#64748b",
+              }}
+              onClick={() =>
+                setExpandedReplies((prev) => ({
+                  ...prev,
+                  [node.id]: !isExpanded,
+                }))
+              }
+            >
+              {isExpanded ? "Thu gọn" : "Xem thêm"}
+            </Button>
+          )}
+          {node.replyTwits && node.replyTwits.length > 0 && (
+            <Box sx={{ mt: 1.5, ml: 2, borderLeft: "1px solid rgba(226,232,240,1)", pl: 2 }}>
+              {node.replyTwits.map((child) => (
+                <ReplyThread key={child.id} node={child} depth={depth + 1} />
+              ))}
+            </Box>
+          )}
         </Box>
-        <Typography sx={{ mt: 1, fontSize: 14, color: "#0f172a" }}>
-          {displayContent}
-        </Typography>
-
-        {isLong && (
-          <Button
-            size="small"
-            sx={{
-              mt: 0.5,
-              textTransform: "none",
-              fontSize: 12,
-              padding: 0,
-              minWidth: "auto",
-              color: "#64748b",
-            }}
-            onClick={() =>
-              setExpandedReplies((prev) => ({
-                ...prev,
-                [node.id]: !isExpanded,
-              }))
-            }
-          >
-            {isExpanded ? "Thu gọn" : "Xem thêm"}
-          </Button>
-        )}
-
-        {node.replyTwits && node.replyTwits.length > 0 && (
-          <Box sx={{ mt: 1.5, ml: 2, borderLeft: "1px solid rgba(226,232,240,1)", pl: 2 }}>
-            {node.replyTwits.map((child) => (
-              <ReplyThread key={child.id} node={child} depth={depth + 1} />
-            ))}
-          </Box>
-        )}
       </Box>
-    </Box>
-  );
+    );
   };
 
   return (
@@ -206,14 +205,15 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
                     </IconButton>
                   )}
                   <Avatar
-                    alt={twit.user?.fullName}
-                    src={
-                      twit.user?.image ||
-                      "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-                    }
+                    alt={twit.user?.fullName || twit.user?.email || "U"}
+                    src={twit.user?.image || undefined}
                     onClick={() => navigate(`/profile/${twit.user?.id}`)}
                     sx={{ cursor: "pointer" }}
-                  />
+                  >
+                    {!twit.user?.image && (twit.user?.fullName || twit.user?.email)
+                      ? (twit.user.fullName || twit.user.email).trim().charAt(0).toUpperCase()
+                      : null}
+                  </Avatar>
                   <div>
                     <Typography sx={{ fontWeight: 600, color: "#0f172a" }}>
                       {twit.user?.fullName || "Ẩn danh"}

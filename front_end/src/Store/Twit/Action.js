@@ -12,6 +12,17 @@ export const getAllTweets=()=>async(dispatch)=>{
     }
 }
 
+export const getFeedTweets = () => async (dispatch) => {
+    try {
+        const { data } = await api.get("/api/twits/feed");
+        console.log("get feed twits : ", data);
+        dispatch({ type: GET_ALL_TWEETS_SUCCESS, payload: data });
+    } catch (error) {
+        console.log("catch error - ", error);
+        dispatch({ type: GET_ALL_TWEETS_FAILURE, payload: error.message });
+    }
+};
+
 export const findUserReplies=(userId)=>async(dispatch)=>{
 	try{
 		const {data}=await api.get(`/api/twits/user/${userId}/replies`);

@@ -15,11 +15,11 @@ const validationSchema = Yup.object().shape({
     .required("Bắt buộc phải nhập email"),
   password: Yup.string().required("Bắt buộc nhập mật khẩu!"),
 });
-const SigninForm = () => {
+const SigninForm = ({ onChangeMode }) => {
   const dispath = useDispatch();
   const navigate = useNavigate();
 
-  const { loading, loginSuccess } = useSelector((state) => state.auth);
+  const { loading, loginSuccess, pendingEmail } = useSelector((state) => state.auth);
 
 
 
@@ -46,7 +46,14 @@ const SigninForm = () => {
     if (loginSuccess) {
       navigate("/home");
     }
-  }, [loginSuccess]);
+  }, [loginSuccess, navigate]);
+
+  // Khi backend yêu cầu 2FA (có pendingEmail), chuyển sang màn hình nhập OTP
+  useEffect(() => {
+    if (pendingEmail && onChangeMode) {
+      onChangeMode("otp");
+    }
+  }, [pendingEmail, onChangeMode]);
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -72,7 +79,11 @@ const SigninForm = () => {
             <Typography variant="subtitle2" sx={{ color: grey[600], fontWeight: 600 }}>
               Mật khẩu
             </Typography>
-            <Typography variant="caption" sx={{ color: blue[500], cursor: "pointer" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: blue[500], cursor: "pointer" }}
+              onClick={() => onChangeMode && onChangeMode("forgot")}
+            >
               Quên mật khẩu?
             </Typography>
           </Stack>

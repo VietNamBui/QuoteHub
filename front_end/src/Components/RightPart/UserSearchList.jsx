@@ -122,14 +122,15 @@ const UserSearchList = () => {
               >
                 <ListItemAvatar>
                   <Avatar
-                    src={
-                      u.image ||
-                      "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-                    }
-                    alt={u.fullName}
+                    src={u.image || undefined}
+                    alt={u.fullName || u.email || "U"}
                     sx={{ width: 32, height: 32, cursor: "pointer" }}
                     onClick={() => navigate(`/profile/${u.id}`)}
-                  />
+                  >
+                    {(!u.image && (u.fullName || u.email))
+                      ? (u.fullName || u.email).trim().charAt(0).toUpperCase()
+                      : null}
+                  </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                   primary={

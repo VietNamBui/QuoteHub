@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,9 @@ public class TwitServiceImplementation implements TwitService{
 
 	@Autowired
 	private QuoteRepository quoteRepository;
+
+	@Autowired
+	private NotificationService notificationService;
 
 	@Override
 	public Twit createTwit(Twit req, User user) throws UserException {
@@ -108,6 +113,36 @@ public class TwitServiceImplementation implements TwitService{
 		}
 		
 		return mixed;
+	}
+
+	@Override
+	public List<Twit> getFeedTwits(User currentUser) {
+		// Nếu chưa đăng nhập thì không có feed cá nhân
+		if (currentUser == null) {
+			return Collections.emptyList();
+		}
+
+		// Lấy toàn bộ twit chính theo thời gian mới nhất
+		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		if (all.isEmpty()) {
+			return all;
+		}
+
+		Long myId = currentUser.getId();
+		Set<Long> followingIds = currentUser.getFollowings() == null
+			? new HashSet<>()
+			: currentUser.getFollowings().stream()
+				.map(User::getId)
+				.collect(Collectors.toSet());
+
+		return all.stream()
+			.filter(t -> t.getUser() != null &&
+				(
+					Objects.equals(t.getUser().getId(), myId) ||
+					followingIds.contains(t.getUser().getId())
+				)
+			)
+			.collect(Collectors.toList());
 	}
 
 //	@Override
@@ -210,6 +245,10 @@ public class TwitServiceImplementation implements TwitService{
 		twit.getReplyTwits().add(savedReply);
 		twitRepository.save(replyFor);
 		
+		// Tạo notification cho chủ bài gốc khi có reply từ người khác
+		if (replyFor.getUser() != null) {
+			notificationService.createReplyNotification(user, replyFor.getUser(), replyFor);
+		}
 		
 		return replyFor;
 	}

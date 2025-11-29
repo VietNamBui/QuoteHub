@@ -74,14 +74,39 @@ const Navigation = () => {
               border: "1px solid rgba(255,255,255,0.12)",
             }}
           >
+            {/* Logo QuoteHub: icon cuốn sách */}
             <svg
-              height="22"
               width="22"
+              height="22"
               viewBox="0 0 24 24"
               aria-hidden="true"
-              fill="#0f172a"
+              fill="none"
             >
-              <path d="M21.742 21.75l-7.563-11.179 7.056-8.321h-2.456l-5.691 6.714-4.54-6.714H2.359l7.29 10.776L2.25 21.75h2.456l6.035-7.118 4.818 7.118h6.191-.008zM7.739 3.818L18.81 20.182h-2.447L5.29 3.818h2.447z"></path>
+              <path
+                d="M5.5 5.25C5.5 4.56 6.06 4 6.75 4h7.5c.83 0 1.5.67 1.5 1.5v12.25c0 .28-.22.5-.5.5H6.75A1.25 1.25 0 0 1 5.5 17V5.25Z"
+                fill="#ffffff"
+                stroke="#0f172a"
+                strokeWidth="1.4"
+              />
+              <path
+                d="M10.25 4H17c.83 0 1.5.67 1.5 1.5v11.75c0 .55-.45 1-1 1-.2 0-.39-.06-.55-.17l-2.9-1.93a1.5 1.5 0 0 0-.83-.25H9.5"
+                stroke="#0f172a"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M8 8h5"
+                stroke="#0f172a"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M8 10.5h3.5"
+                stroke="#0f172a"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
             </svg>
           </Box>
           <Typography variant="h6" sx={{ letterSpacing: 0.8 }}>
@@ -123,22 +148,6 @@ const Navigation = () => {
         })}
       </List>
 
-      <Button
-        variant="contained"
-        endIcon={<LaunchIcon />}
-        sx={{
-          borderRadius: 3,
-          py: 1.7,
-          textTransform: "none",
-          fontSize: "1rem",
-          fontWeight: 700,
-          bgcolor: "#2563eb",
-          boxShadow: "0 12px 24px rgba(37, 99, 235, 0.25)",
-        }}
-      >
-        Viết cảm hứng mới
-      </Button>
-
       <Divider sx={{ borderColor: "rgba(15,23,42,0.08)" }} />
 
       <Stack
@@ -153,9 +162,19 @@ const Navigation = () => {
         }}
       >
         <Avatar
-          alt="username"
-          src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-        />
+          alt={auth.user?.fullName || auth.user?.email || "U"}
+          src={(() => {
+            const img = auth.user?.image;
+            if (!img) return undefined;
+            return img.startsWith("/")
+              ? `http://localhost:5454${img}`
+              : img;
+          })()}
+        >
+          {(!auth.user?.image && (auth.user?.fullName || auth.user?.email))
+            ? (auth.user.fullName || auth.user.email).trim().charAt(0).toUpperCase()
+            : null}
+        </Avatar>
         <Box flex={1}>
           <Typography sx={{ color: "#0f172a", fontWeight: 600 }}>
             {auth.user?.fullName || "Thành viên QuoteHub"}

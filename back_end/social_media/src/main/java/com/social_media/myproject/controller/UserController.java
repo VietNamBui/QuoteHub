@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.social_media.myproject.dto.UserDto;
+import com.social_media.myproject.dto.FeaturedUserDto;
 import com.social_media.myproject.dto.mapper.UserDtoMapper;
 import com.social_media.myproject.exception.UserException;
 import com.social_media.myproject.model.User;
@@ -37,6 +38,16 @@ public class UserController {
 		userDto.setReq_user(true);
 		
 		return new ResponseEntity<UserDto>(userDto, HttpStatus.ACCEPTED);
+	}
+
+	// Người dùng nổi bật cho Communities
+	@GetMapping("/featured")
+	public ResponseEntity<List<FeaturedUserDto>> getFeaturedUsers(
+			@RequestHeader("Authorization") String jwt) throws UserException {
+		// Chỉ để xác thực, chưa dùng reqUser hiện tại trong logic
+		userService.findUserProfileByJwt(jwt);
+		List<FeaturedUserDto> list = userService.getFeaturedUsers();
+		return new ResponseEntity<>(list, HttpStatus.OK);
 	}
 	
 	@GetMapping("/{userId}")

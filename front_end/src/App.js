@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import HomePage from './Components/HomePage/HomePage';
 import Authentication from './Components/Authentication/Authentication';
+import ResetPasswordPage from './Components/Authentication/ResetPasswordPage';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getUserProfile } from './Store/Auth/Action';
@@ -25,6 +26,7 @@ function App() {
   return (
     <div>
       <Routes>
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* Dùng jwt để quyết định đã đăng nhập hay chưa, tránh phụ thuộc vào user */}
         <Route path='/*' element={jwt ? <HomePage /> : <Authentication />} />
       </Routes>

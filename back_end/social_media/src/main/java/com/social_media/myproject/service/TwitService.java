@@ -14,6 +14,7 @@ public interface TwitService {
 	
 	public Twit createTwit(Twit req, User user) throws UserException;
 	public List<Twit> findAllTwit(User currentUser);
+	public List<Twit> getFeedTwits(User currentUser);
 	public Twit retwit(Long twitId, User user) throws UserException, TwitException;
 	public Twit findById(Long twitId) throws TwitException;
 	

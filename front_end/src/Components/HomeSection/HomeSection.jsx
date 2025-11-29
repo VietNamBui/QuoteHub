@@ -7,7 +7,7 @@ import FmdGoodIcon from "@mui/icons-material/FmdGood";
 import TagFacesIcon from "@mui/icons-material/TagFaces";
 import TweetCard from "./TweetCard";
 import { useDispatch, useSelector } from "react-redux";
-import { createTweet, getAllTweets, findTwitsById } from './../../Store/Twit/Action';
+import { createTweet, getFeedTweets, findTwitsById } from './../../Store/Twit/Action';
 import { store } from './../../Store/store';
 import { uploadToCloudnary } from "../../Utils/uploadToCloudnary";
 import TwitDetailModal from "../TwitDetails/TwitDetailModal";
@@ -23,8 +23,8 @@ const HomeSection = () => {
   const [selectedBookId, setSelectedBookId] = useState("");
   const [openTwitDetail, setOpenTwitDetail] = useState(false);
   const [currentRootTwitId, setCurrentRootTwitId] = useState(null);
-  const dispatch=useDispatch();
-  const {twit}=useSelector(store=>store);
+  const dispatch = useDispatch();
+  const { twit, auth } = useSelector((store) => store);
   // console.log("twit",twit)
 
   const handleSubmit = (values,actions) => {
@@ -51,7 +51,7 @@ const HomeSection = () => {
   };
 
   useEffect(()=>{
-    dispatch(getAllTweets())
+    dispatch(getFeedTweets())
   },[twit.like,twit.retwit])
 
   // Lấy danh sách sách của user
@@ -126,9 +126,17 @@ const HomeSection = () => {
       <section className="pb-6">
         <div className="flex space-x-4 rounded-3xl bg-white/80 shadow-md border border-slate-100 px-5 py-4">
           <Avatar
-            alt="username"
-            src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
-          />
+            alt={auth.user?.fullName || auth.user?.email || "U"}
+            src={(() => {
+              const img = auth.user?.image;
+              if (!img) return undefined;
+              return img.startsWith("/") ? `http://localhost:5454${img}` : img;
+            })()}
+          >
+            {!auth.user?.image && (auth.user?.fullName || auth.user?.email)
+              ? (auth.user.fullName || auth.user.email).trim().charAt(0).toUpperCase()
+              : null}
+          </Avatar>
           <div className="w-full">
             <form 
                 onSubmit={(e) => {

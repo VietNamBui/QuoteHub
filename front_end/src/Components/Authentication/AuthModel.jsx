@@ -11,6 +11,8 @@ import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlin
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import SigninForm from "./SigninForm";
 import SignupForm from "./SignupForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
+import OtpForm from "./OtpForm";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 
@@ -31,6 +33,8 @@ const style = {
 
 export default function AuthModal({ open, handleClose, mode, onChangeMode }) {
   const isSignup = mode === "signup";
+  const isForgot = mode === "forgot";
+  const isOtp = mode === "otp";
 
   const featureList = [
     "Khám phá kho trích dẫn được cá nhân hóa",
@@ -46,7 +50,7 @@ export default function AuthModal({ open, handleClose, mode, onChangeMode }) {
       onChangeMode("signin");
     }
   }, [registerSuccess, onChangeMode]);
-  
+
   return (
     <div>
       <Modal
@@ -119,38 +123,55 @@ export default function AuthModal({ open, handleClose, mode, onChangeMode }) {
               <Stack spacing={3}>
                 <Stack spacing={1}>
                   <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {isSignup ? "Tạo tài khoản mới" : "Chào mừng trở lại"}
+                    {isSignup
+                      ? "Tạo tài khoản mới"
+                      : isForgot
+                      ? "Quên mật khẩu"
+                      : isOtp
+                      ? "Nhập mã xác thực"
+                      : "Chào mừng trở lại"}
                   </Typography>
                   <Typography variant="body2" sx={{ color: grey[600] }}>
                     {isSignup
                       ? "Chỉ mất chưa tới 1 phút để tham gia cộng đồng QuoteHub."
+                      : isForgot
+                      ? "Nhập email để nhận liên kết đặt lại mật khẩu của bạn."
+                      : isOtp
+                      ? "Chúng tôi đã gửi mã OTP tới email của bạn. Vui lòng nhập mã để hoàn tất đăng nhập."
                       : "Đăng nhập để tiếp tục khám phá nguồn cảm hứng mới."}
                   </Typography>
                 </Stack>
 
-                {/* {isSignup ? <SignupForm /> : <SigninForm />} */}
-                
                 {mode === "signup" && <SignupForm />}
-                {mode === "signin" && <SigninForm />}
+                {mode === "signin" && <SigninForm onChangeMode={onChangeMode} />}
+                {mode === "forgot" && (
+                  <ForgotPasswordForm onBackToSignin={() => onChangeMode("signin")} />
+                )}
+                {mode === "otp" && (
+                  <OtpForm onBackToSignin={() => onChangeMode("signin")} />
+                )}
 
+                {!isForgot && !isOtp && (
+                  <>
+                    <Divider textAlign="center" sx={{ color: grey[500] }}>
+                      {isSignup ? "Đã có tài khoản?" : "Chưa có tài khoản?"}
+                    </Divider>
 
-                <Divider textAlign="center" sx={{ color: grey[500] }}>
-                  {isSignup ? "Đã có tài khoản?" : "Chưa có tài khoản?"}
-                </Divider>
-
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => onChangeMode(isSignup ? "signin" : "signup")}
-                  sx={{
-                    borderRadius: "18px",
-                    py: "12px",
-                    textTransform: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  {isSignup ? "Chuyển sang đăng nhập" : "Tạo tài khoản mới"}
-                </Button>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      onClick={() => onChangeMode(isSignup ? "signin" : "signup")}
+                      sx={{
+                        borderRadius: "18px",
+                        py: "12px",
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {isSignup ? "Chuyển sang đăng nhập" : "Tạo tài khoản mới"}
+                    </Button>
+                  </>
+                )}
               </Stack>
             </Box>
           </Stack>
