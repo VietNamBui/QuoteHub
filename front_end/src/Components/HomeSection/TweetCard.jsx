@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import { Avatar, Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem as MuiMenuItem } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -29,7 +29,9 @@ const TweetCard = ({ item, onOpenDetail }) => {
   const handleCloseReplyModal = () => setOpenReplyModal(false);
   const dispatch = useDispatch();
   const { auth } = useSelector((store) => store);
+  const location = useLocation();
   const currentUserId = auth.user?.id;
+  const isAdminInAdminView = auth.user?.admin && location.pathname.startsWith("/admin");
 
   // Tính trạng thái đã theo dõi author dựa trên danh sách followings hiện tại
   const isAuthorFollowed =
@@ -202,8 +204,8 @@ const TweetCard = ({ item, onOpenDetail }) => {
                 </Button>
               )}
 
-              {/* Nút Report cho mọi user đã đăng nhập, không phụ thuộc là chủ bài hay không */}
-              {auth.user && (
+              {/* Nút Report: chỉ hiện khi đã đăng nhập VÀ không phải bài của chính mình */}
+              {auth.user && item?.user?.id !== currentUserId && (
                 <Button
                   size="small"
                   variant="text"
@@ -246,8 +248,16 @@ const TweetCard = ({ item, onOpenDetail }) => {
           </div>
           <div className="mt-2">
             <div
-              onClick={onOpenDetail || (() => navigate(`/twit/${item?.id}`))}
-              className="cursor-pointer space-y-2"
+              onClick={
+                isAdminInAdminView
+                  ? undefined
+                  : onOpenDetail || (() => navigate(`/twit/${item?.id}`))
+              }
+              className={
+                isAdminInAdminView
+                  ? "space-y-2"
+                  : "cursor-pointer space-y-2"
+              }
             >
               {item?.quoteHighlight && (
                 <div className="border-l-4 border-blue-500 pl-3 text-gray-800 italic bg-slate-50 rounded-2xl py-2 pr-3">

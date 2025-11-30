@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.social_media.myproject.dto.BookTrendDto;
 import com.social_media.myproject.dto.FriendBookTrendDto;
@@ -37,6 +38,9 @@ public class TwitServiceImplementation implements TwitService{
 
 	@Autowired
 	private QuoteRepository quoteRepository;
+
+	@Autowired
+	private com.social_media.myproject.repository.NotificationRepository notificationRepository;
 
 	@Autowired
 	private NotificationService notificationService;
@@ -221,6 +225,7 @@ public class TwitServiceImplementation implements TwitService{
 	}
 
 	@Override
+	@Transactional
 	public void deleteTwitById(Long twitId, Long userId) throws TwitException, UserException {
 		
 		Twit twit = findById(twitId);
@@ -228,6 +233,8 @@ public class TwitServiceImplementation implements TwitService{
 		if(!userId.equals(twit.getUser().getId())) {
 			throw new UserException("you can't delete another user's twit");
 		}
+		// Xóa toàn bộ notification liên quan đến twit này trước, tránh lỗi khóa ngoại
+		notificationRepository.deleteByTwit(twit);
 		
 		twitRepository.deleteById(twit.getId());
 	}

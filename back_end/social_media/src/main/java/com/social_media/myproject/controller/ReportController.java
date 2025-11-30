@@ -43,6 +43,13 @@ public class ReportController {
             @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
         User reporter = userService.findUserProfileByJwt(jwt);
         Twit twit = twitService.findById(req.getTwitId());
+
+        // Không cho phép user báo cáo chính bài viết của mình
+        if (twit.getUser() != null && twit.getUser().getId() != null
+                && reporter.getId().equals(twit.getUser().getId())) {
+            return new ResponseEntity<>("Bạn không thể báo cáo bài viết của chính mình", HttpStatus.BAD_REQUEST);
+        }
+
         reportService.createReport(reporter, twit, req.getReason());
         return new ResponseEntity<>("Đã gửi báo cáo", HttpStatus.OK);
     }
@@ -51,8 +58,11 @@ public class ReportController {
     @GetMapping("/pending")
     public ResponseEntity<List<TwitDto>> getPendingReportedTwits(
             @RequestHeader("Authorization") String jwt) throws UserException {
-        // Chỉ cần đảm bảo jwt hợp lệ (phân quyền admin có thể thêm sau)
-        userService.findUserProfileByJwt(jwt);
+        // Chỉ admin mới xem được danh sách bài bị báo cáo
+        User user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         List<Report> pending = reportService.findPendingReports();
         // Lấy các Twit unique
         java.util.Set<Long> seen = new java.util.HashSet<>();
@@ -64,8 +74,12 @@ public class ReportController {
                 twits.add(r.getTwit());
             }
         }
-        // Map sang DTO, dùng user null vì ở đây là admin view, không phụ thuộc profile cụ thể
-        List<TwitDto> dtos = TwitDtoMapper.toTwitDtos(twits, null);
+        // Map từng Twit sang DTO; reqUser = null vì đây là admin view, không phụ thuộc profile cụ thể
+        java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+        for (Twit t : twits) {
+            TwitDto dto = TwitDtoMapper.toTwitDto(t, null);
+            if (dto != null) dtos.add(dto);
+        }
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 }

@@ -14,6 +14,7 @@ public class UserDto {
 	private String image;
 	private String backgroundImage;
 	private boolean req_user;
+	private boolean admin;
 	
 	private List<UserDto> followers = new ArrayList<>();
 	private List<UserDto> following = new ArrayList<>();

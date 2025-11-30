@@ -15,6 +15,7 @@ public class UserDtoMapper {
 		userDto.setFullName(user.getFullName());
 		userDto.setImage(user.getImage());
 		userDto.setBackgroundImage(user.getBackgroundImage());
+		userDto.setAdmin(user.isAdmin());
 //		userDto.setFollowers(toUserDtos(user.getFollowers()));
 //		userDto.setFollowing(toUserDtos(user.getFollowings()));
 		// SỬA ĐỔI 1: Chuyển Set<User> sang List<User>

@@ -34,8 +34,11 @@ public class ModerationController {
     public ResponseEntity<Twit> approveTwit(
             @PathVariable("id") Long id,
             @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
-        // TODO: thêm check quyền admin nếu cần
-        userService.findUserProfileByJwt(jwt);
+        // Chỉ admin mới được duyệt bài
+        var user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         Twit updated = twitService.approveModeration(id);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
@@ -45,8 +48,11 @@ public class ModerationController {
             @PathVariable("id") Long id,
             @RequestBody ModerationDecisionRequest req,
             @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
-        // TODO: thêm check quyền admin nếu cần
-        userService.findUserProfileByJwt(jwt);
+        // Chỉ admin mới được từ chối bài
+        var user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         Twit updated = twitService.rejectModeration(id, req.getReason());
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
@@ -55,7 +61,10 @@ public class ModerationController {
     @GetMapping("/twits/pending")
     public ResponseEntity<java.util.List<TwitDto>> getPendingModerationTwits(
             @RequestHeader("Authorization") String jwt) throws UserException {
-        userService.findUserProfileByJwt(jwt);
+        var user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         java.util.List<Twit> pending = twitService.findPendingModerationTwits();
         java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
         for (Twit t : pending) {

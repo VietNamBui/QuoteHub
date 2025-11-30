@@ -4,6 +4,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PendingIcon from "@mui/icons-material/Pending";
+import GavelIcon from "@mui/icons-material/Gavel";
 
 export const navigationMenu = [
   {
@@ -30,5 +31,11 @@ export const navigationMenu = [
     title: "More",
     icon: PendingIcon,
     path: "/more",
+  },
+  {
+    title: "Moderation",
+    icon: GavelIcon,
+    path: "/admin/moderation",
+    adminOnly: true,
   },
 ];

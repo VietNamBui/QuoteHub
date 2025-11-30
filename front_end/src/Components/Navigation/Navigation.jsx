@@ -119,7 +119,12 @@ const Navigation = () => {
       </Stack>
 
       <List sx={{ px: 0 }}>
-        {navigationMenu.map((item) => {
+        {navigationMenu
+          .filter((item) => {
+            if (item.adminOnly && !auth.user?.admin) return false;
+            return true;
+          })
+          .map((item) => {
           const IconComponent = item.icon;
           const isActive =
             item.title === "Profile"

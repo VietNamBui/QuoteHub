@@ -1,11 +1,11 @@
-import { Box, Paper } from "@mui/material";
+import { Box, Paper, Stack, Typography, Button } from "@mui/material";
 import React, { useEffect } from "react";
 import Navigation from "../Navigation/Navigation";
 import HomeSection from "../HomeSection/HomeSection";
 import RightPart from "../RightPart/RightPart";
 import NotificationPage from "../Notification/NotificationPage";
 import CommunitiesPage from "../Communities/CommunitiesPage";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Profile from "../Profile/Profile";
 import TwitDetais from "../TwitDetails/TwitDetais";
 import MorePage from "../More/MorePage";
@@ -14,11 +14,17 @@ import LabelQuotesPage from "../More/LabelQuotesPage";
 import { useDispatch, useSelector } from "react-redux";
 import { connectNotificationSocket } from "../../Utils/notificationSocket";
 import { toast } from "react-toastify";
+import { logout } from "../../Store/Auth/Action";
 import AdminModerationPage from "../Admin/AdminModerationPage";
+import AdminAnalyticsPage from "../Admin/AdminAnalyticsPage";
 
 const HomePage = () => {
   const { auth } = useSelector((store) => store);
   const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isAdminView = auth.user?.admin && location.pathname.startsWith("/admin");
 
   // Kết nối WebSocket để nhận thông báo realtime
   useEffect(() => {
@@ -49,6 +55,7 @@ const HomePage = () => {
       disconnect && disconnect();
     };
   }, [auth.user, dispatch]);
+
 
   return (
     <Box
@@ -93,7 +100,41 @@ const HomePage = () => {
               justifyContent: "center", // căn giữa nội dung theo chiều dọc
             }}
           >
-            <Navigation />
+            {isAdminView ? (
+              <Stack spacing={2}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Bảng điều khiển Admin
+                </Typography>
+                <Stack spacing={1}>
+                  <Button
+                    size="small"
+                    variant={location.pathname.startsWith("/admin/moderation") ? "contained" : "text"}
+                    onClick={() => navigate("/admin/moderation")}
+                    sx={{
+                      justifyContent: "flex-start",
+                      textTransform: "none",
+                      borderRadius: 2,
+                    }}
+                  >
+                    Moderation
+                  </Button>
+                  <Button
+                    size="small"
+                    variant={location.pathname.startsWith("/admin/analytics") ? "contained" : "text"}
+                    onClick={() => navigate("/admin/analytics")}
+                    sx={{
+                      justifyContent: "flex-start",
+                      textTransform: "none",
+                      borderRadius: 2,
+                    }}
+                  >
+                    Analytics
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : (
+              <Navigation />
+            )}
           </Paper>
         </Box>
 
@@ -117,8 +158,26 @@ const HomePage = () => {
             }}
           >
             <Routes>
-              <Route path="/" element={<HomeSection />}></Route>
-              <Route path="/home" element={<HomeSection />}></Route>
+              <Route
+                path="/"
+                element={
+                  auth.user?.admin ? (
+                    <Navigate to="/admin/moderation" replace />
+                  ) : (
+                    <HomeSection />
+                  )
+                }
+              ></Route>
+              <Route
+                path="/home"
+                element={
+                  auth.user?.admin ? (
+                    <Navigate to="/admin/moderation" replace />
+                  ) : (
+                    <HomeSection />
+                  )
+                }
+              ></Route>
               <Route path="/notification" element={<NotificationPage />}></Route>
               <Route path="/communities" element={<CommunitiesPage />}></Route>
               <Route path="/profile/:id" element={<Profile />}></Route>
@@ -126,7 +185,18 @@ const HomePage = () => {
               <Route path="/more" element={<MorePage />}></Route>
               <Route path="/more/books/:bookId" element={<BookQuotesPage />}></Route>
               <Route path="/more/labels/:labelId" element={<LabelQuotesPage />}></Route>
-              <Route path="/admin/moderation" element={<AdminModerationPage />}></Route>
+              <Route
+                path="/admin/moderation"
+                element={
+                  auth.user?.admin ? <AdminModerationPage /> : <Navigate to="/home" replace />
+                }
+              ></Route>
+              <Route
+                path="/admin/analytics"
+                element={
+                  auth.user?.admin ? <AdminAnalyticsPage /> : <Navigate to="/home" replace />
+                }
+              ></Route>
             </Routes>
           </Paper>
         </Box>
@@ -153,7 +223,27 @@ const HomePage = () => {
               justifyContent: "center", // căn giữa nội dung theo chiều dọc
             }}
           >
-            <RightPart />
+            {isAdminView ? (
+              <Stack spacing={2}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Thông tin Admin
+                </Typography>
+                <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.7)" }}>
+                  Bạn đang đăng nhập với quyền quản trị. Tại đây có thể theo dõi trạng thái
+                  kiểm duyệt, báo cáo người dùng và các số liệu phân tích hệ thống.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => dispatch(logout())}
+                  sx={{ alignSelf: "flex-start", textTransform: "none", mt: 1, borderRadius: 2 }}
+                >
+                  Đăng xuất
+                </Button>
+              </Stack>
+            ) : (
+              <RightPart />
+            )}
           </Paper>
         </Box>
       </Box>

@@ -8,9 +8,9 @@ import com.social_media.myproject.model.User;
 public class TwitUtil {
 	
 	public final static boolean isLikedByReqUser(User reqUser, Twit twit) {
-		
-		for(Like like : twit.getLikes()) {
-			if(like.getUser().getId().equals(reqUser.getId())) {
+		if (reqUser == null || twit == null) return false;
+		for (Like like : twit.getLikes()) {
+			if (like.getUser() != null && like.getUser().getId().equals(reqUser.getId())) {
 				return true;
 			}
 		}
@@ -26,8 +26,9 @@ public class TwitUtil {
 //		return false;
 //	}
 	public final static boolean isRetwitedByReqUser(User reqUser, Twit twit) {
+	    if (reqUser == null || twit == null) return false;
 	    for (TwitRetwitUser r : twit.getRetwits()) {
-	        if (r.getUser().getId().equals(reqUser.getId())) {
+	        if (r.getUser() != null && r.getUser().getId().equals(reqUser.getId())) {
 	            return true;
 	        }
 	    }

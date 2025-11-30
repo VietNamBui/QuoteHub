@@ -35,6 +35,7 @@ public class User {
 	private String image;
 	private String backgroundImage;
 	private boolean req_user;
+	private boolean admin = false;
 	
 	 // Twits
 	@JsonIgnore

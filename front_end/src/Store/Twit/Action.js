@@ -162,9 +162,13 @@ export const deleteTweet=(twitId)=>async(dispatch)=>{
         const {data}=await api.delete(`/api/twits/${twitId}`);
         console.log("deleted tweet : ",data)
         dispatch({type:TWEET_DELETE_SUCCESS,payload:twitId})
+        const msg = data?.message || "Đã xóa bài viết thành công";
+        toast.success(msg);
     } catch (error) {
         console.log("catch error - ",error)
         dispatch({type:TWEET_DELETE_FAILURE,payload:error.message})
+        const msg = error.response?.data || error.response?.data?.message || "Xóa bài viết thất bại";
+        toast.error(msg);
     }
 }
 
