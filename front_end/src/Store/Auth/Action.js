@@ -7,13 +7,12 @@ export const loginUser = (loginData) => async (dispatch) => {
   try {
     dispatch({ type: "LOGIN_REQUEST" });
 
-    // xóa token cũ trước khi đăng nhập
     localStorage.removeItem("jwt");
     const { data } = await axios.post(`${API_BASE_URL}/auth/signin`, loginData);
     console.log("logedin user ", data);
 
     if (data.twoFactorRequired) {
-      // Bước 1 thành công, yêu cầu nhập OTP
+      // Thành công, yêu cầu nhập OTP
       dispatch({ type: "LOGIN_2FA_REQUIRED", payload: data.email });
       return;
     }
@@ -31,7 +30,6 @@ export const loginUser = (loginData) => async (dispatch) => {
   } catch (error) {
     console.log("error ", error);
     const msg = error.response?.data?.message || "Đăng nhập thất bại";
-    // dispatch({ type: LOGIN_USER_FAILURE, payload: error.message });
     dispatch({
         type: "LOGIN_FAIL",
         payload: msg,

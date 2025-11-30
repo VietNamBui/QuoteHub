@@ -25,6 +25,8 @@ import com.social_media.myproject.model.User;
 import com.social_media.myproject.repository.LikeRepository;
 import com.social_media.myproject.repository.QuoteRepository;
 import com.social_media.myproject.repository.TwitRepository;
+import com.social_media.myproject.model.Report;
+import com.social_media.myproject.repository.ReportRepository;
 import com.social_media.myproject.request.TwitReplyReques;
 
 @Service
@@ -39,12 +41,19 @@ public class TwitServiceImplementation implements TwitService{
 	@Autowired
 	private NotificationService notificationService;
 
+	@Autowired
+	private AIClassificationService aiClassificationService;
+	
+	@Autowired
+	private ReportRepository reportRepository;
+
 	@Override
 	public Twit createTwit(Twit req, User user) throws UserException {
 		if (req.getQuote() == null || req.getQuote().getId() == null) {
 			throw new RuntimeException("Quote is required to create a twit");
 		}
-		
+		// Kiểm duyệt nội dung twit trước khi lưu, gán trạng thái nhiều mức
+		AIClassificationService.ModerationResult mr = aiClassificationService.moderate(req.getContent());
 		Quote quote = quoteRepository.findById(req.getQuote().getId())
 				.orElseThrow(() -> new RuntimeException("Quote not found with id " + req.getQuote().getId()));
 		
@@ -55,8 +64,24 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setUser(user);
 		twit.setIsReply(false);
 		twit.setIsTwit(true);
-		twit.setVideo(req.getVideo());
 		twit.setQuote(quote);
+		// Ghi lại thông tin kiểm duyệt từ AI
+		twit.setAiRiskScore(mr.riskScore);
+		twit.setAiCategories(mr.categories == null || mr.categories.isEmpty()
+			? null
+			: String.join(", ", mr.categories));
+		// Chính sách nhiều lớp: nếu rủi ro thấp -> APPROVED, trung bình -> PENDING, cao -> BLOCKED
+		if (mr.safe || mr.riskScore < 0.3) {
+			twit.setModerationStatus("APPROVED");
+		} else if (mr.riskScore < 0.7) {
+			twit.setModerationStatus("PENDING");
+			twit.setModerationReason("AI nghi ngờ: " + twit.getAiCategories());
+		} else {
+			twit.setModerationStatus("BLOCKED");
+			twit.setModerationReason("AI đánh giá vi phạm nặng: " + twit.getAiCategories());
+			// Với vi phạm nặng, chặn luôn và thông báo cho FE
+			throw new RuntimeException(twit.getModerationReason());
+		}
 		
 		Twit saved = twitRepository.save(twit);
 		// Gửi thông báo cho toàn bộ followers khi user đăng twit mới
@@ -234,6 +259,8 @@ public class TwitServiceImplementation implements TwitService{
 	public Twit createdReply(TwitReplyReques req, User user) throws TwitException {
 		
 		Twit replyFor=findById(req.getTwitId());
+		// Kiểm duyệt nội dung reply trước khi lưu, gán trạng thái nhiều mức
+		AIClassificationService.ModerationResult mr = aiClassificationService.moderate(req.getContent());
 		
 		Twit twit = new Twit();
 		twit.setContent(req.getContent());
@@ -243,6 +270,21 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setIsReply(true);
 		twit.setIsTwit(false);
 		twit.setReplyFor(replyFor);
+		// Ghi lại thông tin kiểm duyệt từ AI
+		twit.setAiRiskScore(mr.riskScore);
+		twit.setAiCategories(mr.categories == null || mr.categories.isEmpty()
+			? null
+			: String.join(", ", mr.categories));
+		if (mr.safe || mr.riskScore < 0.3) {
+			twit.setModerationStatus("APPROVED");
+		} else if (mr.riskScore < 0.7) {
+			twit.setModerationStatus("PENDING");
+			twit.setModerationReason("AI nghi ngờ: " + twit.getAiCategories());
+		} else {
+			twit.setModerationStatus("BLOCKED");
+			twit.setModerationReason("AI đánh giá vi phạm nặng: " + twit.getAiCategories());
+			throw new RuntimeException(twit.getModerationReason());
+		}
 		
 		Twit savedReply = twitRepository.save(twit);
 		
@@ -398,6 +440,49 @@ public class TwitServiceImplementation implements TwitService{
 			.collect(Collectors.toList());
 
 		return result;
+	}
+
+	@Override
+	public Twit approveModeration(Long twitId) throws TwitException {
+		Twit twit = findById(twitId);
+		if (twit == null) {
+			throw new TwitException("Twit not found with id" + twitId);
+		}
+		twit.setModerationStatus("APPROVED");
+		// Đánh dấu các report liên quan là REVIEWED
+		java.util.List<Report> reports = reportRepository.findByTwitAndStatus(twit, "PENDING");
+		for (Report r : reports) {
+			 r.setStatus("REVIEWED");
+		}
+		if (!reports.isEmpty()) {
+			reportRepository.saveAll(reports);
+		}
+		return twitRepository.save(twit);
+	}
+
+	@Override
+	public Twit rejectModeration(Long twitId, String reason) throws TwitException {
+		Twit twit = findById(twitId);
+		if (twit == null) {
+			throw new TwitException("Twit not found with id" + twitId);
+		}
+		twit.setModerationStatus("REJECTED");
+		if (reason != null && !reason.isBlank()) {
+			twit.setModerationReason(reason);
+		}
+		java.util.List<Report> reports = reportRepository.findByTwitAndStatus(twit, "PENDING");
+		for (Report r : reports) {
+			 r.setStatus("REVIEWED");
+		}
+		if (!reports.isEmpty()) {
+			reportRepository.saveAll(reports);
+		}
+		return twitRepository.save(twit);
+	}
+
+	@Override
+	public List<Twit> findPendingModerationTwits() {
+		return twitRepository.findByModerationStatus("PENDING");
 	}
 
 }

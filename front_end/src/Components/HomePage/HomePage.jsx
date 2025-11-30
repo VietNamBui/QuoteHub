@@ -14,6 +14,7 @@ import LabelQuotesPage from "../More/LabelQuotesPage";
 import { useDispatch, useSelector } from "react-redux";
 import { connectNotificationSocket } from "../../Utils/notificationSocket";
 import { toast } from "react-toastify";
+import AdminModerationPage from "../Admin/AdminModerationPage";
 
 const HomePage = () => {
   const { auth } = useSelector((store) => store);
@@ -125,6 +126,7 @@ const HomePage = () => {
               <Route path="/more" element={<MorePage />}></Route>
               <Route path="/more/books/:bookId" element={<BookQuotesPage />}></Route>
               <Route path="/more/labels/:labelId" element={<LabelQuotesPage />}></Route>
+              <Route path="/admin/moderation" element={<AdminModerationPage />}></Route>
             </Routes>
           </Paper>
         </Box>

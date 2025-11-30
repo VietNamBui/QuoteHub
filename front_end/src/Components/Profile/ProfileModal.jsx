@@ -46,9 +46,6 @@ export default function ProfileModal({ open, handleClose }) {
   const formik = useFormik({
     initialValues: {
       fullName: auth.user?.fullName || "",
-      website: auth.user?.website || "",
-      location: auth.user?.location || "",
-      bio: auth.user?.bio || "",
       backgroundImage: auth.user?.backgroundImage || "",
       image: auth.user?.image || "",
     },
@@ -158,18 +155,6 @@ export default function ProfileModal({ open, handleClose }) {
                     formik.touched.fullName && Boolean(formik.errors.fullName)
                   }
                   helperText={formik.touched.fullName && formik.errors.fullName}
-                />
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  id="bio"
-                  name="bio"
-                  label="Bio"
-                  value={formik.values.bio}
-                  onChange={formik.handleChange}
-                  error={formik.touched.bio && Boolean(formik.errors.bio)}
-                  helperText={formik.touched.bio && formik.errors.bio}
                 />
               </div>
             </div>

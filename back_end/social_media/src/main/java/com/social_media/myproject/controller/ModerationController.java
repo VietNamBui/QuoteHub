@@ -1,0 +1,67 @@
+package com.social_media.myproject.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.social_media.myproject.dto.TwitDto;
+import com.social_media.myproject.dto.mapper.TwitDtoMapper;
+import com.social_media.myproject.exception.TwitException;
+import com.social_media.myproject.exception.UserException;
+import com.social_media.myproject.model.Twit;
+import com.social_media.myproject.request.ModerationDecisionRequest;
+import com.social_media.myproject.service.TwitService;
+import com.social_media.myproject.service.UserService;
+
+@RestController
+@RequestMapping("/api/moderation")
+public class ModerationController {
+
+    @Autowired
+    private TwitService twitService;
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/twits/{id}/approve")
+    public ResponseEntity<Twit> approveTwit(
+            @PathVariable("id") Long id,
+            @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
+        // TODO: thêm check quyền admin nếu cần
+        userService.findUserProfileByJwt(jwt);
+        Twit updated = twitService.approveModeration(id);
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+    @PostMapping("/twits/{id}/reject")
+    public ResponseEntity<Twit> rejectTwit(
+            @PathVariable("id") Long id,
+            @RequestBody ModerationDecisionRequest req,
+            @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
+        // TODO: thêm check quyền admin nếu cần
+        userService.findUserProfileByJwt(jwt);
+        Twit updated = twitService.rejectModeration(id, req.getReason());
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+    // Lấy danh sách tất cả twit đang ở trạng thái AI PENDING (không cần phải bị report)
+    @GetMapping("/twits/pending")
+    public ResponseEntity<java.util.List<TwitDto>> getPendingModerationTwits(
+            @RequestHeader("Authorization") String jwt) throws UserException {
+        userService.findUserProfileByJwt(jwt);
+        java.util.List<Twit> pending = twitService.findPendingModerationTwits();
+        java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+        for (Twit t : pending) {
+            TwitDto dto = TwitDtoMapper.toTwitDto(t, null);
+            if (dto != null) dtos.add(dto);
+        }
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+}

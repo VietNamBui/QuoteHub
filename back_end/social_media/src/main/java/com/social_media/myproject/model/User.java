@@ -7,7 +7,6 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,17 +30,11 @@ public class User {
 	private Long id;
 	
 	private String fullName;
-	private String location;
-	private String website;
-	private String birthDate;
 	private String email;
 	private String password;
-	private String mobile;
 	private String image;
 	private String backgroundImage;
-	private String bio;
 	private boolean req_user;
-	private boolean login_with_google;
 	
 	 // Twits
 	@JsonIgnore
@@ -51,9 +44,6 @@ public class User {
 	 // Likes
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
 	private List<Like> likes = new ArrayList<>();
-	
-	@Embedded
-	private Varification verification;
 	
     // Followers
     @ManyToMany(mappedBy = "followings")

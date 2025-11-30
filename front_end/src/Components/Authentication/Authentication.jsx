@@ -1,5 +1,4 @@
 import { Button, Grid, Typography, Box, Stack, Paper, Chip, Divider } from "@mui/material";
-import { GoogleLogin } from "@react-oauth/google";
 import React, { useState } from "react";
 import AuthModal from "./AuthModel";
 
@@ -61,22 +60,14 @@ const Authentication = () => {
               <Stack spacing={3}>
                 <div>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                    Đăng nhập nhanh với Google
+                    Tham gia QuoteHub
                   </Typography>
                   <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.6)" }}>
-                    Tận hưởng trải nghiệm đồng bộ và bảo mật tuyệt đối.
+                    Đăng ký hoặc đăng nhập bằng email để bắt đầu lưu trữ các trích dẫn.
                   </Typography>
                 </div>
 
-                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                  <GoogleLogin
-                    width={330}
-                    onSuccess={(credentialResponse) => console.log("Google login thành công", credentialResponse)}
-                    onError={() => console.log("Google login thất bại")}
-                  />
-                </Box>
-
-                <Divider sx={{ borderColor: "rgba(15,23,42,0.08)" }}>hoặc</Divider>
+                <Divider sx={{ borderColor: "rgba(15,23,42,0.08)" }} />
 
                 <Stack spacing={2}>
                   <Button

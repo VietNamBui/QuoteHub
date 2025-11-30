@@ -25,7 +25,6 @@ import com.social_media.myproject.exception.UserException;
 import com.social_media.myproject.model.PasswordResetToken;
 import com.social_media.myproject.model.TwoFactorCode;
 import com.social_media.myproject.model.User;
-import com.social_media.myproject.model.Varification;
 import com.social_media.myproject.repository.PasswordResetTokenRepository;
 import com.social_media.myproject.repository.TwoFactorCodeRepository;
 import com.social_media.myproject.repository.UserRepository;
@@ -64,8 +63,6 @@ public class AuthController {
 		String email = user.getEmail();
 		String password = user.getPassword();
 		String fullName = user.getFullName();
-		String birthDate = user.getBirthDate();
-		
 		
 		User isEmailExist = userRepository.findByEmail(email);
 		
@@ -77,8 +74,6 @@ public class AuthController {
 		createdUser.setEmail(email);
 		createdUser.setFullName(fullName);
 		createdUser.setPassword(passwordEncoder.encode(password));
-		createdUser.setBirthDate(birthDate);
-		createdUser.setVerification(new Varification());
 		
 		User savedUser = userRepository.save(createdUser);
 		
@@ -163,11 +158,11 @@ public class AuthController {
 			return new ResponseEntity<>("Email is required", HttpStatus.BAD_REQUEST);
 		}
 		User user = userRepository.findByEmail(email);
-		// Luôn trả về 200 để tránh lộ thông tin tài khoản tồn tại hay không
+
 		if (user == null) {
 			return new ResponseEntity<>("If this email exists, a reset link has been sent", HttpStatus.OK);
 		}
-		// Tạo token mới
+
 		PasswordResetToken token = new PasswordResetToken();
 		token.setUser(user);
 		token.setToken(UUID.randomUUID().toString());

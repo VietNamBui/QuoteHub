@@ -14,8 +14,6 @@ public class TwitDto {
 	
 	private String image;
 	
-	private String video;
-	
 	private UserDto user;
 	
 	private LocalDateTime createdAt;
@@ -48,5 +46,9 @@ public class TwitDto {
 	private String parentQuoteHighlight;
 	private String parentQuoteBookTitle;
 	private String parentQuoteBookAuthor;
+	
+	// Trạng thái kiểm duyệt nội dung
+	private String moderationStatus;
+	private String moderationReason;
 
 }

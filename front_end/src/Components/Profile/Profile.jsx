@@ -17,6 +17,7 @@ import { getUsersTweet, findTwitsByLikeContaineUser, findUserReplies } from "../
 
 const Profile = () => {
   const [tabValue, setTabValue] = useState("1");
+  const [moderationTab, setModerationTab] = useState("all"); // all, approved, pending, rejected
   const navigate = useNavigate();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const handleOpenProfileModel = () => setOpenProfileModal(true);
@@ -147,9 +148,93 @@ dispatch(getUsersTweet(id))
               </TabList>
             </Box>
             <TabPanel value="1">
-              {twit.twits.map((item) => (
-                <TweetCard item={item}/>
-              ))}
+              {/* Tabs con để lọc theo trạng thái kiểm duyệt */}
+              <div className="border-b border-slate-200 mb-2">
+                <div className="flex space-x-4 text-sm">
+                  <button
+                    type="button"
+                    className={`pb-2 border-b-2 transition-colors ${
+                      moderationTab === "all"
+                        ? "border-sky-500 text-sky-600 font-semibold"
+                        : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                    onClick={() => setModerationTab("all")}
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    className={`pb-2 border-b-2 transition-colors ${
+                      moderationTab === "approved"
+                        ? "border-sky-500 text-sky-600 font-semibold"
+                        : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                    onClick={() => setModerationTab("approved")}
+                  >
+                    Đã được duyệt
+                  </button>
+                  <button
+                    type="button"
+                    className={`pb-2 border-b-2 transition-colors ${
+                      moderationTab === "pending"
+                        ? "border-sky-500 text-sky-600 font-semibold"
+                        : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                    onClick={() => setModerationTab("pending")}
+                  >
+                    Đang chờ duyệt
+                  </button>
+                  <button
+                    type="button"
+                    className={`pb-2 border-b-2 transition-colors ${
+                      moderationTab === "rejected"
+                        ? "border-sky-500 text-sky-600 font-semibold"
+                        : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                    onClick={() => setModerationTab("rejected")}
+                  >
+                    Đã bị từ chối
+                  </button>
+                </div>
+              </div>
+
+              {(() => {
+                const allTwits = twit.twits || [];
+                if (allTwits.length === 0) {
+                  return <p className="text-gray-500">User này chưa có twit nào.</p>;
+                }
+
+                let filtered = allTwits;
+                if (moderationTab === "approved") {
+                  filtered = allTwits.filter(
+                    (t) => !t.moderationStatus || t.moderationStatus === "APPROVED"
+                  );
+                } else if (moderationTab === "pending") {
+                  filtered = allTwits.filter(
+                    (t) => t.moderationStatus === "PENDING"
+                  );
+                } else if (moderationTab === "rejected") {
+                  filtered = allTwits.filter(
+                    (t) => t.moderationStatus === "REJECTED"
+                  );
+                }
+
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-gray-500">
+                      Không có twit nào trong mục này.
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4 mt-2">
+                    {filtered.map((item) => (
+                      <TweetCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                );
+              })()}
             </TabPanel>
             <TabPanel value="2">
               {twit.repliesTwits && twit.repliesTwits.length > 0 ? (

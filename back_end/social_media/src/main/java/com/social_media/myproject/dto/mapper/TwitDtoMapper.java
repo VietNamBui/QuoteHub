@@ -41,8 +41,16 @@ public class TwitDtoMapper {
 		twitDto.setLiked(isLiked);
 		twitDto.setRetwit(isRetwited);
 		twitDto.setRetwitUserId(retwitUserId);
+		// Map trạng thái kiểm duyệt để feed/reply giữ được thông tin sau reload
+		twitDto.setModerationStatus(twit.getModerationStatus());
+		twitDto.setModerationReason(twit.getModerationReason());
+		// Map trạng thái kiểm duyệt để feed/reply giữ được thông tin sau reload
+		twitDto.setModerationStatus(twit.getModerationStatus());
+		twitDto.setModerationReason(twit.getModerationReason());
 		twitDto.setReplyTwits(toTwitDtos(twit.getReplyTwits(), reqUser, visitedIds));
-		twitDto.setVideo(twit.getVideo());
+		// Map trạng thái kiểm duyệt
+		twitDto.setModerationStatus(twit.getModerationStatus());
+		twitDto.setModerationReason(twit.getModerationReason());
 		
 		Quote quote = twit.getQuote();
 		if (quote != null) {
@@ -107,7 +115,11 @@ public class TwitDtoMapper {
 	    if (twit == null) return null;
 	    if (visitedIds.contains(twit.getId())) return null;
 	    visitedIds.add(twit.getId());
-		
+		// DEBUG: log moderation info JPA đọc được từ DB
+		System.out.println("[TwitDtoMapper] toReplyTwitDto twitId=" + twit.getId()
+			+ " status=" + twit.getModerationStatus()
+			+ " reason=" + twit.getModerationReason());
+
 		UserDto user = UserDtoMapper.toUserDto(twit.getUser());
 		
 		boolean isLiked = TwitUtil.isLikedByReqUser(reqUser, twit);
@@ -131,7 +143,6 @@ public class TwitDtoMapper {
 		twitDto.setLiked(isLiked);
 		twitDto.setRetwit(isRetwited);
 		twitDto.setRetwitUserId(retwitUserId);
-		twitDto.setVideo(twit.getVideo());
 		
 		Quote quote = twit.getQuote();
 		if (quote != null) {

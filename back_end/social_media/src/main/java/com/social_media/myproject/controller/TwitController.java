@@ -129,10 +129,12 @@ public class TwitController {
 		User user = userService.findUserProfileByJwt(jwt);
 		
 		List<Twit> twits = twitService.findAllTwit(user);
-		
-		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, user);
-		
-		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
+		java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+		for (Twit t : twits) {
+			TwitDto dto = TwitDtoMapper.toTwitDto(t, user);
+			if (dto != null) dtos.add(dto);
+		}
+		return new ResponseEntity<>(dtos, HttpStatus.OK);
 	}
 
 	@GetMapping("/feed")
@@ -140,8 +142,13 @@ public class TwitController {
 			@RequestHeader("Authorization") String jwt) throws UserException, TwitException {
 		User user = userService.findUserProfileByJwt(jwt);
 		List<Twit> twits = twitService.getFeedTwits(user);
-		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, user);
-		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
+		// Map từng Twit bằng toTwitDto để giữ nguyên đầy đủ moderationStatus & moderationReason
+		java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+		for (Twit t : twits) {
+			TwitDto dto = TwitDtoMapper.toTwitDto(t, user);
+			if (dto != null) dtos.add(dto);
+		}
+		return new ResponseEntity<>(dtos, HttpStatus.OK);
 	}
 
 	// Twits mà user đã reply (isReply=true)
@@ -152,7 +159,11 @@ public class TwitController {
 		userService.findUserProfileByJwt(jwt);
 		User targetUser = userService.findUserById(userId);
 		List<Twit> replies = twitService.getUserReplies(targetUser);
-		List<TwitDto> dtos = TwitDtoMapper.toTwitDtos(replies, targetUser);
+		java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+		for (Twit t : replies) {
+			TwitDto dto = TwitDtoMapper.toTwitDto(t, targetUser);
+			if (dto != null) dtos.add(dto);
+		}
 		return new ResponseEntity<>(dtos, HttpStatus.OK);
 	}
 	
@@ -165,10 +176,12 @@ public class TwitController {
 		User targetUser = userService.findUserById(userId);
 		
 		List<Twit> twits = twitService.getUserTwit(targetUser);
-		
-		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, targetUser);
-		
-		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
+		java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+		for (Twit t : twits) {
+			TwitDto dto = TwitDtoMapper.toTwitDto(t, targetUser);
+			if (dto != null) dtos.add(dto);
+		}
+		return new ResponseEntity<>(dtos, HttpStatus.OK);
 	}
 	
 	
@@ -180,10 +193,12 @@ public class TwitController {
 		User targetUser = userService.findUserById(userId);
 		
 		List<Twit> twits = twitService.findByLikesContainsUser(targetUser);
-		
-		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, targetUser);
-		
-		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
+		java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+		for (Twit t : twits) {
+			TwitDto dto = TwitDtoMapper.toTwitDto(t, targetUser);
+			if (dto != null) dtos.add(dto);
+		}
+		return new ResponseEntity<>(dtos, HttpStatus.OK);
 	}
 
 	// Trending theo sách toàn cộng đồng

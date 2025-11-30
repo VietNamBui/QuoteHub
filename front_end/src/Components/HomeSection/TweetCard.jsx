@@ -11,7 +11,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteOutlined from "@mui/icons-material/Favorite";
 import ReplyModal from "./ReplyModal";
 import { useDispatch, useSelector } from "react-redux";
-import { createReTweet, likeTweet, deleteTweet, updateTweet } from "../../Store/Twit/Action";
+import { createReTweet, likeTweet, deleteTweet, updateTweet, reportTweet } from "../../Store/Twit/Action";
 import { followUserAction } from "../../Store/Auth/Action";
 
 const TweetCard = ({ item, onOpenDetail }) => {
@@ -35,6 +35,15 @@ const TweetCard = ({ item, onOpenDetail }) => {
   const isAuthorFollowed =
     (auth.user?.followings || []).some((u) => u.id === item?.user?.id) ||
     Boolean(item?.user?.followed);
+
+  const moderationStatus = item?.moderationStatus;
+  const moderationLabel = (() => {
+    if (!moderationStatus) return null;
+    if (moderationStatus === "PENDING") return "Đang chờ duyệt";
+    if (moderationStatus === "REJECTED") return "Đã bị từ chối";
+    if (moderationStatus === "BLOCKED") return "Đã bị chặn";
+    return null;
+  })();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -130,6 +139,14 @@ const TweetCard = ({ item, onOpenDetail }) => {
     if (!item?.user?.id || item.user.id === currentUserId) return;
     dispatch(followUserAction(item.user.id));
   };
+
+  const handleReportTweet = () => {
+    if (!item?.id) return;
+    const defaultReason = "Nội dung không phù hợp";
+    const reason = window.prompt("Lý do báo cáo bài viết này?", defaultReason);
+    if (!reason) return;
+    dispatch(reportTweet(item.id, reason));
+  };
   return (
     <React.Fragment>
       <div className="flex space-x-4 rounded-3xl bg-white/80 shadow-sm border border-slate-100 px-5 py-4 transition hover:shadow-md">
@@ -163,6 +180,11 @@ const TweetCard = ({ item, onOpenDetail }) => {
               </span>
             </div>
             <div className="flex items-center space-x-2">
+              {moderationLabel && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                  {moderationLabel}
+                </span>
+              )}
               {item?.user?.id !== currentUserId && (
                 <Button
                   size="small"
@@ -177,6 +199,18 @@ const TweetCard = ({ item, onOpenDetail }) => {
                   }}
                 >
                   {isAuthorFollowed ? "Bỏ theo dõi" : "Theo dõi"}
+                </Button>
+              )}
+
+              {/* Nút Report cho mọi user đã đăng nhập, không phụ thuộc là chủ bài hay không */}
+              {auth.user && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={handleReportTweet}
+                  sx={{ textTransform: "none", fontSize: 11 }}
+                >
+                  Báo cáo
                 </Button>
               )}
 

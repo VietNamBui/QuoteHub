@@ -12,6 +12,9 @@ public interface TwitRepository extends JpaRepository<Twit, Long>{
 	
 	List<Twit> findAllByIsTwitTrueOrderByCreatedAtDesc();
 	
+	// Admin moderation: lấy danh sách twit theo trạng thái kiểm duyệt
+	List<Twit> findByModerationStatus(String moderationStatus);
+	
 //	List<Twit> findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(User user, Long userId);
 
 	List<Twit> findByLikesContainingOrderByCreatedAtDesc(User user);

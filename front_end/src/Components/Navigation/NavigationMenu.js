@@ -22,11 +22,6 @@ export const navigationMenu = [
     path: "/communities",
   },
   {
-    title: "Membership Plans",
-    icon: VerifiedIcon,
-    path: "/verified",
-  },
-  {
     title: "Profile",
     icon: AccountCircleIcon,
     path: "/profile",

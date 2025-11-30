@@ -1,4 +1,4 @@
-import { Avatar, Button, MenuItem, TextField } from "@mui/material";
+import { Avatar, Button, MenuItem, TextField, Modal, Box, CircularProgress, Typography } from "@mui/material";
 import { useFormik } from "formik";
 import React, { useEffect, useState } from "react";
 import * as Yup from "yup";
@@ -23,11 +23,13 @@ const HomeSection = () => {
   const [selectedBookId, setSelectedBookId] = useState("");
   const [openTwitDetail, setOpenTwitDetail] = useState(false);
   const [currentRootTwitId, setCurrentRootTwitId] = useState(null);
+  const [aiChecking, setAiChecking] = useState(false);
+  const [aiResult, setAiResult] = useState(null); // { status, message }
   const dispatch = useDispatch();
   const { twit, auth } = useSelector((store) => store);
   // console.log("twit",twit)
 
-  const handleSubmit = (values,actions) => {
+  const handleSubmit = async (values,actions) => {
     if (!values.quoteId) {
       alert("Bạn phải chọn một câu quote trước khi đăng twit.");
       return;
@@ -44,10 +46,37 @@ const HomeSection = () => {
       quote: { id: values.quoteId }
     };
 
-    dispatch(createTweet(payload))
-    actions.resetForm()
-    // console.log("values ", values);
-    setSelectedImage("")
+    setAiChecking(true);
+    setAiResult(null);
+    try {
+      const data = await dispatch(createTweet(payload));
+      const status = data?.moderationStatus;
+      const reason = data?.moderationReason;
+
+      if (status === "PENDING") {
+        setAiResult({
+          status: "pending",
+          message:
+            reason || "AI nghi ngờ một số điểm. Bài đang chờ duyệt thêm.",
+        });
+      } else {
+        setAiResult({
+          status: "ok",
+          message:
+            reason || "AI không phát hiện vi phạm. Bài đã được đăng.",
+        });
+      }
+      actions.resetForm();
+      setSelectedImage("");
+    } catch (e) {
+      setAiResult({ status: "error", message: e.message || "Đăng bài thất bại" });
+    } finally {
+      // Đợi một chút cho user kịp đọc kết quả rồi đóng popup
+      setTimeout(() => {
+        setAiChecking(false);
+        setAiResult(null);
+      }, 2000);
+    }
   };
 
   useEffect(()=>{
@@ -298,17 +327,22 @@ const HomeSection = () => {
         </div>
       </section>
       <section className="space-y-4">
-        {twit.twits.map((item) => (
-          <TweetCard
-            key={item.id}
-            item={item}
-            onOpenDetail={() => {
-              setCurrentRootTwitId(item.id);
-              dispatch(findTwitsById(item.id));
-              setOpenTwitDetail(true);
-            }}
-          />
-        ))}
+        {(twit.twits || [])
+          .filter(
+            (item) =>
+              !item.moderationStatus || item.moderationStatus === "APPROVED"
+          )
+          .map((item) => (
+            <TweetCard
+              key={item.id}
+              item={item}
+              onOpenDetail={() => {
+                setCurrentRootTwitId(item.id);
+                dispatch(findTwitsById(item.id));
+                setOpenTwitDetail(true);
+              }}
+            />
+          ))}
       </section>
       <TwitDetailModal
         open={openTwitDetail}
@@ -316,6 +350,59 @@ const HomeSection = () => {
         twit={twit.twit}
         rootId={currentRootTwitId}
       />
+
+      {/* Popup trạng thái kiểm duyệt AI khi đăng tweet */}
+      <Modal open={aiChecking} onClose={() => {}}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "white",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 3,
+            minWidth: 320,
+            textAlign: "center",
+          }}
+        >
+          {!aiResult && (
+            <>
+              <CircularProgress size={28} sx={{ mb: 2 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Đang chờ AI duyệt nội dung...
+              </Typography>
+            </>
+          )}
+          {aiResult && (
+            <>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color:
+                    aiResult.status === "ok"
+                      ? "#16a34a"
+                      : aiResult.status === "pending"
+                      ? "#f59e0b"
+                      : "#dc2626",
+                }}
+              >
+                {aiResult.status === "ok"
+                  ? "Kiểm duyệt thành công"
+                  : aiResult.status === "pending"
+                  ? "Bài đang chờ duyệt thêm"
+                  : "Nội dung vi phạm"}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#4b5563" }}>
+                {aiResult.message}
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Modal>
     </div>
   );
 };

@@ -16,7 +16,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import SubscriptionModal from "../SubscriptionModal/SubscriptionModal";
 import UserSearchList from "./UserSearchList";
 import { useSelector, useDispatch } from "react-redux";
 import { followUserAction } from "../../Store/Auth/Action";
@@ -24,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../config/api";
 
 const RightPart = () => {
-  const [openSubscriptionModel, setOpenSubscriptionModel] = useState(false);
   const [bookTrends, setBookTrends] = useState([]); // xu hướng sách toàn cộng đồng
   const [friendBookTrends, setFriendBookTrends] = useState([]); // xu hướng sách từ bạn bè
 
@@ -33,12 +31,6 @@ const RightPart = () => {
   const { auth } = useSelector((store) => store);
   const currentUser = auth.user;
   const followings = currentUser?.followings || [];
-
-  const handleOpenSubcriptionModel = () => setOpenSubscriptionModel(true);
-  const handleCloseSubcriptionModel = () => setOpenSubscriptionModel(false);
-  const handleChangeTheme = () => {
-    console.log("handle change theme");
-  };
 
   // Gọi API xu hướng khi có jwt (đăng nhập) và cập nhật theo danh sách followings
   useEffect(() => {
@@ -78,32 +70,6 @@ const RightPart = () => {
 
   return (
     <Stack spacing={3}>
-      <TextField
-        fullWidth
-        placeholder="Tìm kiếm tác giả, chủ đề…"
-        variant="outlined"
-        size="small"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ color: "rgba(15,23,42,0.45)" }} />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton size="small" onClick={handleChangeTheme} sx={{ color: "rgba(15,23,42,0.5)" }}>
-                <Brightness4Icon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ),
-          sx: {
-            borderRadius: 999,
-            bgcolor: "#f8fafc",
-            color: "#0f172a",
-          },
-        }}
-      />
-
       <Card
         sx={{
           borderRadius: 4,
@@ -196,8 +162,6 @@ const RightPart = () => {
           </CardContent>
         </Card>
       )}
-
-      <SubscriptionModal open={openSubscriptionModel} handleClose={handleCloseSubcriptionModel} />
     </Stack>
   );
 };

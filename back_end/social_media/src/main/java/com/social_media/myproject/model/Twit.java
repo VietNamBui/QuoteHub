@@ -28,7 +28,6 @@ public class Twit {
 
     private String content;
     private String image;
-    private String video;
 
     @ManyToOne
     @JoinColumn(name = "reply_for_id")
@@ -50,4 +49,13 @@ public class Twit {
 
     @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TwitRetwitUser> retwits = new ArrayList<>();
+
+    // Trạng thái kiểm duyệt nội dung: APPROVED, PENDING, BLOCKED, REJECTED
+    private String moderationStatus;
+    // Lý do bị gắn cờ (từ AI hoặc từ moderator)
+    private String moderationReason;
+    // Điểm rủi ro do AI đánh giá (0-1)
+    private Double aiRiskScore;
+    // Các nhãn vi phạm do AI trả về, ví dụ: "HATE, SEXUAL"
+    private String aiCategories;
 }

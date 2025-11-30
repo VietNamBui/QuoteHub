@@ -37,5 +37,10 @@ public interface TwitService {
 	// Trending
 	List<BookTrendDto> getTrendingBooks();
 	List<FriendBookTrendDto> getFriendsTrendingBooks(User currentUser);
+	
+	// Admin moderation
+	Twit approveModeration(Long twitId) throws TwitException;
+	Twit rejectModeration(Long twitId, String reason) throws TwitException;
+	List<Twit> findPendingModerationTwits();
 
 }

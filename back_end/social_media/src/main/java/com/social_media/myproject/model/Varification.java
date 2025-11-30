@@ -1,13 +1,7 @@
 package com.social_media.myproject.model;
 
-import java.time.LocalDateTime;
+// Legacy verification/subscription data has been removed from the domain model.
+// This class is kept empty only to avoid schema issues on existing databases.
 
-import lombok.Data;
-
-@Data
 public class Varification {
-	private boolean status = false;
-	private LocalDateTime startedAt;
-	private LocalDateTime endsAt;
-	private String planType;
 }

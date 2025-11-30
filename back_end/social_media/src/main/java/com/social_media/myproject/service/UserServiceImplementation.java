@@ -65,22 +65,6 @@ public class UserServiceImplementation implements UserService {
 			user.setBackgroundImage(req.getBackgroundImage());
 		}
 		
-		if(req.getBirthDate() != null) {
-			user.setBirthDate(req.getBirthDate());
-		}
-		
-		if(req.getLocation() != null) {
-			user.setLocation(req.getLocation());
-		}
-		
-		if (req.getBio() != null) {
-			user.setBio(req.getBio());
-		}
-		
-		if(req.getWebsite() != null) {
-			user.setWebsite(req.getWebsite());
-		}
-		
 		return userRepository.save(user);
 	}
 

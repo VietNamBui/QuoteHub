@@ -1,5 +1,33 @@
 import { api } from "../../config/api"
-import { FIND_TWEET_BY_ID_FAILURE, FIND_TWEET_BY_ID_SUCCESS, GET_ALL_TWEETS_FAILURE, GET_ALL_TWEETS_REQUEST, GET_ALL_TWEETS_SUCCESS, GET_USERS_TWEET_FAILURE, GET_USERS_TWEET_REQUEST, GET_USERS_TWEET_SUCCESS, LIKE_TWEET_FAILURE, LIKE_TWEET_SUCCESS, REPLY_TWEET_FAILURE, REPLY_TWEET_REQUEST, REPLY_TWEET_SUCCESS, RETWEET_FAILURE, RETWEET_REQUEST, RETWEET_SUCCESS, TWEET_CREATE_FAILURE, TWEET_CREATE_SUCCESS, TWEET_DELETE_FAILURE, TWEET_DELETE_SUCCESS, TWEET_UPDATE_SUCCESS, TWEET_UPDATE_FAILURE, USER_LIKE_TWEET_FAILURE, USER_LIKE_TWEET_SUCCESS, USER_REPLY_TWEET_SUCCESS, USER_REPLY_TWEET_FAILURE } from "./ActionType";
+import { toast } from "react-toastify";
+import { 
+  FIND_TWEET_BY_ID_FAILURE, 
+  FIND_TWEET_BY_ID_SUCCESS, 
+  GET_ALL_TWEETS_FAILURE, 
+  GET_ALL_TWEETS_REQUEST, 
+  GET_ALL_TWEETS_SUCCESS, 
+  GET_USERS_TWEET_FAILURE, 
+  GET_USERS_TWEET_REQUEST, 
+  GET_USERS_TWEET_SUCCESS, 
+  LIKE_TWEET_FAILURE, 
+  LIKE_TWEET_SUCCESS, 
+  REPLY_TWEET_FAILURE, 
+  REPLY_TWEET_REQUEST, 
+  REPLY_TWEET_SUCCESS, 
+  RETWEET_FAILURE, 
+  RETWEET_REQUEST, 
+  RETWEET_SUCCESS, 
+  TWEET_CREATE_FAILURE, 
+  TWEET_CREATE_SUCCESS, 
+  TWEET_DELETE_FAILURE, 
+  TWEET_DELETE_SUCCESS, 
+  TWEET_UPDATE_SUCCESS, 
+  TWEET_UPDATE_FAILURE, 
+  USER_LIKE_TWEET_FAILURE, 
+  USER_LIKE_TWEET_SUCCESS, 
+  USER_REPLY_TWEET_SUCCESS, 
+  USER_REPLY_TWEET_FAILURE 
+} from "./ActionType";
 
 export const getAllTweets=()=>async(dispatch)=>{
     try {
@@ -72,9 +100,13 @@ export const createTweet=(tweetData)=>async(dispatch)=>{
         const {data}=await api.post(`/api/twits/create`,tweetData);
         console.log("created tweet: ",data)
         dispatch({type:TWEET_CREATE_SUCCESS,payload:data})
+        return data;
     } catch (error) {
         console.log("catch error - ",error)
-        dispatch({type:TWEET_CREATE_FAILURE,payload:error.message})
+        const msg = error.response?.data || error.response?.data?.message || "Đăng bài thất bại";
+        dispatch({type:TWEET_CREATE_FAILURE,payload:msg})
+        // Ném lỗi để component hiển thị popup kết quả AI rõ ràng
+        throw new Error(msg);
     }
 }
 
@@ -86,7 +118,9 @@ export const createTweetReply=(tweetData)=>async(dispatch)=>{
         dispatch({type:REPLY_TWEET_SUCCESS,payload:data})
     } catch (error) {
         console.log("catch error - ",error)
-        dispatch({type:REPLY_TWEET_FAILURE,payload:error.message})
+        const msg = error.response?.data || error.response?.data?.message || "Gửi phản hồi thất bại";
+        dispatch({type:REPLY_TWEET_FAILURE,payload:msg})
+        toast.error(msg);
     }
 }
 
@@ -133,3 +167,15 @@ export const deleteTweet=(twitId)=>async(dispatch)=>{
         dispatch({type:TWEET_DELETE_FAILURE,payload:error.message})
     }
 }
+
+// Báo cáo một twit vi phạm
+export const reportTweet = (twitId, reason) => async (dispatch) => {
+    try {
+        await api.post("/api/reports", { twitId, reason });
+        toast.success("Đã gửi báo cáo.");
+    } catch (error) {
+        console.log("catch error - ", error);
+        const msg = error.response?.data || error.response?.data?.message || "Không thể gửi báo cáo";
+        toast.error(msg);
+    }
+};
