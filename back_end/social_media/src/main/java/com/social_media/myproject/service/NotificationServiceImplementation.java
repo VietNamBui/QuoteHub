@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import com.social_media.myproject.dto.NotificationDto;
+import com.social_media.myproject.dto.mapper.NotificationDtoMapper;
 import com.social_media.myproject.model.Notification;
 import com.social_media.myproject.model.Twit;
 import com.social_media.myproject.model.User;
@@ -16,6 +19,9 @@ public class NotificationServiceImplementation implements NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Override
     public List<Notification> getMyNotifications(User currentUser) {
@@ -36,7 +42,14 @@ public class NotificationServiceImplementation implements NotificationService {
         n.setTwit(twit);
         n.setCreatedAt(LocalDateTime.now());
         n.setReadFlag(false);
-        return notificationRepository.save(n);
+        Notification saved = notificationRepository.save(n);
+        // Gửi realtime qua WebSocket cho người nhận (dạng DTO giống API REST)
+        if (saved.getRecipient() != null && saved.getRecipient().getId() != null) {
+            String destination = "/topic/notifications/" + saved.getRecipient().getId();
+            NotificationDto dto = NotificationDtoMapper.toDto(saved);
+            messagingTemplate.convertAndSend(destination, dto);
+        }
+        return saved;
     }
 
     @Override
@@ -52,6 +65,14 @@ public class NotificationServiceImplementation implements NotificationService {
     @Override
     public Notification createFollowNotification(User sender, User recipient) {
         return buildAndSave(Notification.Type.FOLLOW, sender, recipient, null);
+    }
+
+    @Override
+    public void createNewTwitNotificationForFollowers(User author, Twit twit) {
+        if (author == null || author.getFollowers() == null || author.getFollowers().isEmpty()) return;
+        for (User follower : author.getFollowers()) {
+            buildAndSave(Notification.Type.NEW_TWIT, author, follower, twit);
+        }
     }
 
     @Override

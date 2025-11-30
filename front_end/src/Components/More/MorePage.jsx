@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../config/api";
 import { Box, CircularProgress, Grid, Paper, Typography, Tabs, Tab } from "@mui/material";
 import KindleImportPage from "./KindleImportPage";
@@ -9,7 +9,8 @@ const MorePage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("books");
+  const location = useLocation();
+  const [tab, setTab] = useState(location.state?.initialTab || "books");
   const navigate = useNavigate();
 
   useEffect(() => {

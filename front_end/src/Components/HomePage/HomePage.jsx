@@ -1,5 +1,5 @@
 import { Box, Paper } from "@mui/material";
-import React from "react";
+import React, { useEffect } from "react";
 import Navigation from "../Navigation/Navigation";
 import HomeSection from "../HomeSection/HomeSection";
 import RightPart from "../RightPart/RightPart";
@@ -11,8 +11,44 @@ import TwitDetais from "../TwitDetails/TwitDetais";
 import MorePage from "../More/MorePage";
 import BookQuotesPage from "../More/BookQuotesPage";
 import LabelQuotesPage from "../More/LabelQuotesPage";
+import { useDispatch, useSelector } from "react-redux";
+import { connectNotificationSocket } from "../../Utils/notificationSocket";
+import { toast } from "react-toastify";
 
 const HomePage = () => {
+  const { auth } = useSelector((store) => store);
+  const dispatch = useDispatch();
+
+  // Kết nối WebSocket để nhận thông báo realtime
+  useEffect(() => {
+    const userId = auth.user?.id;
+    if (!userId) return;
+
+    const disconnect = connectNotificationSocket(userId, (notification) => {
+      console.log("[WS] Notification received:", notification);
+      // Cập nhật Redux
+      dispatch({ type: "NOTIFICATION_PUSHED", payload: notification });
+
+      // Hiện toast đơn giản
+      const sender = notification.senderName || "Người dùng";
+      let msg = "Hoạt động mới";
+      if (notification.type === "LIKE") {
+        msg = `${sender} đã thích bài viết của bạn`;
+      } else if (notification.type === "REPLY") {
+        msg = `${sender} đã bình luận vào bài viết của bạn`;
+      } else if (notification.type === "FOLLOW") {
+        msg = `${sender} đã theo dõi bạn`;
+      } else if (notification.type === "NEW_TWIT") {
+        msg = `${sender} vừa đăng một bài viết mới`;
+      }
+      toast.info(msg);
+    });
+
+    return () => {
+      disconnect && disconnect();
+    };
+  }, [auth.user, dispatch]);
+
   return (
     <Box
       sx={{

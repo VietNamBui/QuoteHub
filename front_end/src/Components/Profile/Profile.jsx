@@ -111,9 +111,9 @@ dispatch(getUsersTweet(id))
           <div className="flex items-center">
             <h1 className="font-bold text-lg">{auth.findUser?.fullName}</h1>
           </div>
-            <h1 className="text-gray-500">
-              @{(auth.findUser?.fullName || "unknown").split("").join("_").toLowerCase()}
-            </h1>
+          <h1 className="text-gray-500">
+            @{auth.findUser?.email || "unknown"}
+          </h1>
         </div>
 
         <div className="mt-2 space-y-3">

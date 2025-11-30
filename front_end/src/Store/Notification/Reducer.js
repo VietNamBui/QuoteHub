@@ -19,6 +19,16 @@ export const notificationReducer = (state = initialState, action) => {
       return { ...state, loading: false, items: action.payload || [], error: null };
     case GET_NOTIFICATIONS_FAILURE:
       return { ...state, loading: false, error: action.payload };
+    case "NOTIFICATION_PUSHED": {
+      const incoming = action.payload;
+      if (!incoming) return state;
+      const exists = state.items.some((n) => n.id === incoming.id);
+      if (exists) return state;
+      return {
+        ...state,
+        items: [incoming, ...state.items],
+      };
+    }
     case MARK_NOTIFICATION_READ_SUCCESS:
       return {
         ...state,

@@ -159,10 +159,7 @@ const TweetCard = ({ item, onOpenDetail }) => {
             <div className="flex cursor-pointer items-center space-x-2">
               <span className="font-semibold">{item?.user?.fullName || "Ẩn danh"}</span>
               <span className="text-gray-600">
-                @{(item?.user?.fullName || item?.user?.email || "unknown")
-                  .split("")
-                  .join("_")
-                  .toLowerCase()} . 2m
+                @{item?.user?.email || "unknown"} . 2m
               </span>
             </div>
             <div className="flex items-center space-x-2">

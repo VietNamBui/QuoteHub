@@ -16,10 +16,12 @@ public class Notification {
     public enum Type {
         LIKE,
         REPLY,
-        FOLLOW
+        FOLLOW,
+        NEW_TWIT
     }
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private Type type;
 
     @ManyToOne

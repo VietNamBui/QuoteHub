@@ -143,7 +143,7 @@ const UserSearchList = () => {
                   }
                   secondary={
                     <Typography sx={{ fontSize: 12, color: "rgba(15,23,42,0.6)" }}>
-                      @{(u.fullName || "unknown").split("").join("_").toLowerCase()}
+                      @{u.email || "unknown"}
                     </Typography>
                   }
                 />

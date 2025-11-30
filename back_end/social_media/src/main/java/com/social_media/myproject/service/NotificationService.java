@@ -16,5 +16,7 @@ public interface NotificationService {
 
     Notification createFollowNotification(User sender, User recipient);
 
+    void createNewTwitNotificationForFollowers(User author, Twit twit);
+
     Notification markAsRead(Long notificationId, User currentUser);
 }

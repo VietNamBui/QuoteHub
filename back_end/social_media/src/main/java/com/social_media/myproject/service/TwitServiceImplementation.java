@@ -58,7 +58,11 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setVideo(req.getVideo());
 		twit.setQuote(quote);
 		
-		return twitRepository.save(twit);
+		Twit saved = twitRepository.save(twit);
+		// Gửi thông báo cho toàn bộ followers khi user đăng twit mới
+		notificationService.createNewTwitNotificationForFollowers(user, saved);
+		
+		return saved;
 	}
 
 	@Override

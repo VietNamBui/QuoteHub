@@ -28,6 +28,8 @@ const NotificationPage = () => {
         return `${senderName} đã bình luận vào twit của bạn`;
       case "FOLLOW":
         return `${senderName} đã theo dõi bạn`;
+      case "NEW_TWIT":
+        return `${senderName} vừa đăng một bài viết mới`;
       default:
         return "Hoạt động mới";
     }

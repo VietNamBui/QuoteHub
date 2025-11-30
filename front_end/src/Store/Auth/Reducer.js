@@ -127,7 +127,12 @@ export const authReducer = (state = initialState, action) => {
       return { ...state, loading: true, error: null, loginSuccess: false };
 
     case "REGISTER_SUCCESS":
-      return { ...state, loading: false, registerSuccess: true };
+      return {
+        ...state,
+        loading: false,
+        registerSuccess: true,
+        pendingEmail: null,
+      };
 
     case "LOGIN_SUCCESS":
       return {

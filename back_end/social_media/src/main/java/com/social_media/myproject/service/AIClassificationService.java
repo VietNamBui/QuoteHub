@@ -18,10 +18,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AIClassificationService {
 
     @Value("${ai.api.url}")
-    private String apiUrl;
+    private String apiUrl; // Ví dụ: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 
     @Value("${ai.api.key}")
-    private String apiKey;
+    private String apiKey; // GOOGLE_API_KEY, nên cấu hình qua biến môi trường
 
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -34,21 +34,24 @@ public class AIClassificationService {
             "Không thêm chữ nào khác.\n\n" +
             "Đoạn trích:\n" + text;
 
+        // Request body theo format Google Generative Language API (Gemini)
         Map<String, Object> body = Map.of(
-            "model", "deepseek/deepseek-chat-v3-0324:free",
-            "messages", List.of(
-                Map.of("role", "user", "content", prompt)
+            "contents", List.of(
+                Map.of(
+                    "parts", List.of(
+                        Map.of("text", prompt)
+                    )
+                )
             ),
-            "temperature", 0.2
+            "generationConfig", Map.of(
+                "temperature", 0.2
+            )
         );
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + apiKey);
-
-        // OpenRouter yêu cầu
-        headers.set("HTTP-Referer", "http://localhost:3000");
-        headers.set("X-Title", "Social Media Quote App");
+        // Google Generative Language API: truyền API key qua header X-goog-api-key
+        headers.set("X-goog-api-key", apiKey);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -59,12 +62,22 @@ public class AIClassificationService {
                 entity,
                 Map.class
             );
+            // Parse response theo cấu trúc Gemini
+            Map<String, Object> bodyMap = response.getBody();
+            if (bodyMap == null) return List.of();
 
-            Map<String, Object> choice = (Map<String, Object>)
-                ((List) response.getBody().get("choices")).get(0);
+            List candidates = (List) bodyMap.get("candidates");
+            if (candidates == null || candidates.isEmpty()) return List.of();
 
-            String content = (String)
-                ((Map) choice.get("message")).get("content");
+            Map<String, Object> firstCandidate = (Map<String, Object>) candidates.get(0);
+            Map<String, Object> contentObj = (Map<String, Object>) firstCandidate.get("content");
+            if (contentObj == null) return List.of();
+
+            List parts = (List) contentObj.get("parts");
+            if (parts == null || parts.isEmpty()) return List.of();
+
+            Map<String, Object> firstPart = (Map<String, Object>) parts.get(0);
+            String content = (String) firstPart.get("text");
 
             // Xử lý trường hợp trả về dạng ```json ... ```
             content = content

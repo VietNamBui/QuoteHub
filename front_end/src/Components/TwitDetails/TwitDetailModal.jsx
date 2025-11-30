@@ -107,7 +107,7 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
                 {node.user?.fullName || node.user?.email}
               </Typography>
               <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
-                @{node.user?.username || node.user?.email} · 2m
+                @{node.user?.email || node.user?.username || "unknown"} · 2m
               </Typography>
             </Box>
             <Button
@@ -219,11 +219,7 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
                       {twit.user?.fullName || "Ẩn danh"}
                     </Typography>
                     <Typography sx={{ fontSize: 13, color: "#64748b" }}>
-                      @{(twit.user?.fullName || twit.user?.email || "unknown")
-                        .split("")
-                        .join("_")
-                        .toLowerCase()} 
-                      · 2m
+                      @{twit.user?.email || "unknown"} · 2m
                     </Typography>
                   </div>
                 </Stack>

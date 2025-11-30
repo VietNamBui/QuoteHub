@@ -180,10 +180,7 @@ const Navigation = () => {
             {auth.user?.fullName || "Thành viên QuoteHub"}
           </Typography>
           <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.6)" }}>
-            @{(auth.user?.fullName || "")
-              .split(" ")
-              .join("_")
-              .toLowerCase()}
+            @{auth.user?.email || "unknown"}
           </Typography>
         </Box>
         <IconButton

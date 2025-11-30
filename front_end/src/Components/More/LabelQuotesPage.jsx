@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../config/api";
-import { Box, CircularProgress, Paper, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Paper, Typography } from "@mui/material";
 
 const LabelQuotesPage = () => {
   const { labelId } = useParams();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,9 +46,19 @@ const LabelQuotesPage = () => {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
-        Các đoạn trích của thể loại
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2, gap: 2 }}>
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => navigate("/more", { state: { initialTab: "classification" } })}
+          sx={{ textTransform: "none", px: 0, minWidth: "auto" }}
+        >
+          ← Quay lại
+        </Button>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Các đoạn trích của thể loại
+        </Typography>
+      </Box>
       {quotes.length === 0 ? (
         <Box textAlign="center" py={4}>
           <Typography variant="body1">Chưa có đoạn trích nào thuộc thể loại này.</Typography>
