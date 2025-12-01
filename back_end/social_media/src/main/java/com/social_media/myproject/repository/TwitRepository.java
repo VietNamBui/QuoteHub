@@ -15,6 +15,9 @@ public interface TwitRepository extends JpaRepository<Twit, Long>{
 	// Admin moderation: lấy danh sách twit theo trạng thái kiểm duyệt
 	List<Twit> findByModerationStatus(String moderationStatus);
 	
+	// Đếm số lượng twit theo trạng thái kiểm duyệt
+	long countByModerationStatus(String moderationStatus);
+	
 //	List<Twit> findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(User user, Long userId);
 
 	List<Twit> findByLikesContainingOrderByCreatedAtDesc(User user);

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.social_media.myproject.dto.BookTrendDto;
 import com.social_media.myproject.dto.FriendBookTrendDto;
@@ -51,6 +52,9 @@ public class TwitServiceImplementation implements TwitService{
 	@Autowired
 	private ReportRepository reportRepository;
 
+	@Autowired
+	private SimpMessagingTemplate messagingTemplate;
+
 	@Override
 	public Twit createTwit(Twit req, User user) throws UserException {
 		if (req.getQuote() == null || req.getQuote().getId() == null) {
@@ -81,15 +85,20 @@ public class TwitServiceImplementation implements TwitService{
 			twit.setModerationStatus("PENDING");
 			twit.setModerationReason("AI nghi ngờ: " + twit.getAiCategories());
 		} else {
+			// Vi phạm nặng: BLOCKED nhưng vẫn lưu vào DB để phục vụ thống kê / kiểm tra admin
 			twit.setModerationStatus("BLOCKED");
 			twit.setModerationReason("AI đánh giá vi phạm nặng: " + twit.getAiCategories());
-			// Với vi phạm nặng, chặn luôn và thông báo cho FE
-			throw new RuntimeException(twit.getModerationReason());
 		}
 		
 		Twit saved = twitRepository.save(twit);
-		// Gửi thông báo cho toàn bộ followers khi user đăng twit mới
-		notificationService.createNewTwitNotificationForFollowers(user, saved);
+		// Chỉ gửi thông báo cho followers nếu bài không bị BLOCKED
+		if (!"BLOCKED".equals(saved.getModerationStatus())) {
+			notificationService.createNewTwitNotificationForFollowers(user, saved);
+		}
+		// Báo cho admin rằng số liệu analytics có thay đổi
+		if (messagingTemplate != null) {
+			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+		}
 		
 		return saved;
 	}
@@ -290,17 +299,19 @@ public class TwitServiceImplementation implements TwitService{
 		} else {
 			twit.setModerationStatus("BLOCKED");
 			twit.setModerationReason("AI đánh giá vi phạm nặng: " + twit.getAiCategories());
-			throw new RuntimeException(twit.getModerationReason());
 		}
 		
 		Twit savedReply = twitRepository.save(twit);
 		
-		twit.getReplyTwits().add(savedReply);
-		twitRepository.save(replyFor);
-		
-		// Tạo notification cho chủ bài gốc khi có reply từ người khác
-		if (replyFor.getUser() != null) {
-			notificationService.createReplyNotification(user, replyFor.getUser(), replyFor);
+		// Chỉ gắn vào danh sách reply & gửi notification nếu reply không bị BLOCKED
+		if (!"BLOCKED".equals(savedReply.getModerationStatus())) {
+			replyFor.getReplyTwits().add(savedReply);
+			twitRepository.save(replyFor);
+			
+			// Tạo notification cho chủ bài gốc khi có reply từ người khác
+			if (replyFor.getUser() != null) {
+				notificationService.createReplyNotification(user, replyFor.getUser(), replyFor);
+			}
 		}
 		
 		return replyFor;
@@ -456,15 +467,19 @@ public class TwitServiceImplementation implements TwitService{
 			throw new TwitException("Twit not found with id" + twitId);
 		}
 		twit.setModerationStatus("APPROVED");
-		// Đánh dấu các report liên quan là REVIEWED
+		// Đánh dấu các report liên quan là REJECTED (báo cáo sai, bài được giữ lại)
 		java.util.List<Report> reports = reportRepository.findByTwitAndStatus(twit, "PENDING");
 		for (Report r : reports) {
-			 r.setStatus("REVIEWED");
+			 r.setStatus("REJECTED");
 		}
 		if (!reports.isEmpty()) {
 			reportRepository.saveAll(reports);
 		}
-		return twitRepository.save(twit);
+		Twit saved = twitRepository.save(twit);
+		if (messagingTemplate != null) {
+			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+		}
+		return saved;
 	}
 
 	@Override
@@ -490,6 +505,12 @@ public class TwitServiceImplementation implements TwitService{
 	@Override
 	public List<Twit> findPendingModerationTwits() {
 		return twitRepository.findByModerationStatus("PENDING");
+	}
+
+	@Override
+	public List<Twit> findTwitsByModerationStatus(String status) {
+		if (status == null) return java.util.List.of();
+		return twitRepository.findByModerationStatus(status);
 	}
 
 }

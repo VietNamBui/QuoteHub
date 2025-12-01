@@ -6,9 +6,19 @@ import TweetCard from "../HomeSection/TweetCard";
 
 const AdminModerationPage = () => {
   const [loading, setLoading] = useState(false);
-  const [aiItems, setAiItems] = useState([]);
-  const [reportedItems, setReportedItems] = useState([]);
   const [tab, setTab] = useState("ai"); // "ai" | "reports"
+  const [subTab, setSubTab] = useState("pending"); // "pending" | "approved" | "rejected" | "blocked" (AI only)
+
+  // AI nghi ngờ
+  const [aiPending, setAiPending] = useState([]);
+  const [aiApproved, setAiApproved] = useState([]);
+  const [aiRejected, setAiRejected] = useState([]);
+  const [aiBlocked, setAiBlocked] = useState([]);
+
+  // User báo cáo
+  const [repPending, setRepPending] = useState([]);
+  const [repApproved, setRepApproved] = useState([]);
+  const [repRejected, setRepRejected] = useState([]);
 
   const loadPending = async () => {
     try {
@@ -18,8 +28,17 @@ const AdminModerationPage = () => {
         api.get("/api/reports/pending"),
       ]);
 
-      setAiItems(Array.isArray(aiRes.data) ? aiRes.data : []);
-      setReportedItems(Array.isArray(reportRes.data) ? reportRes.data : []);
+      const aiList = Array.isArray(aiRes.data) ? aiRes.data : [];
+      const repList = Array.isArray(reportRes.data) ? reportRes.data : [];
+
+      setAiPending(aiList);
+      setAiApproved([]);
+      setAiRejected([]);
+      setAiBlocked([]);
+
+      setRepPending(repList);
+      setRepApproved([]);
+      setRepRejected([]);
     } catch (e) {
       console.error("Không thể tải danh sách bài bị báo cáo", e);
       toast.error("Không thể tải danh sách bài bị báo cáo");
@@ -32,12 +51,59 @@ const AdminModerationPage = () => {
     loadPending();
   }, []);
 
+  // Load theo trạng thái khi đổi subTab hoặc tab lớn
+  useEffect(() => {
+    const loadByStatus = async () => {
+      try {
+        setLoading(true);
+        if (tab === "ai") {
+          if (subTab === "approved") {
+            const res = await api.get("/api/moderation/twits", { params: { status: "APPROVED" } });
+            setAiApproved(Array.isArray(res.data) ? res.data : []);
+          } else if (subTab === "rejected") {
+            const res = await api.get("/api/moderation/twits", { params: { status: "REJECTED" } });
+            setAiRejected(Array.isArray(res.data) ? res.data : []);
+          } else if (subTab === "blocked") {
+            const res = await api.get("/api/moderation/twits", { params: { status: "BLOCKED" } });
+            setAiBlocked(Array.isArray(res.data) ? res.data : []);
+          } else {
+            // pending đã được load bằng loadPending
+          }
+        } else {
+          if (subTab === "approved") {
+            const res = await api.get("/api/reports/by-status", { params: { status: "APPROVED" } });
+            setRepApproved(Array.isArray(res.data) ? res.data : []);
+          } else if (subTab === "rejected") {
+            const res = await api.get("/api/reports/by-status", { params: { status: "REJECTED" } });
+            setRepRejected(Array.isArray(res.data) ? res.data : []);
+          } else {
+            // pending đã được load bằng loadPending
+          }
+        }
+      } catch (e) {
+        console.error("Không thể tải danh sách theo trạng thái", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Chỉ gọi API khi không phải pending
+    if (subTab !== "pending") {
+      loadByStatus();
+    }
+  }, [tab, subTab]);
+
   const handleApprove = async (id) => {
     try {
       await api.post(`/api/moderation/twits/${id}/approve`);
       toast.success("Đã duyệt bài viết");
-      setAiItems((prev) => prev.filter((t) => t.id !== id));
-      setReportedItems((prev) => prev.filter((t) => t.id !== id));
+      // Sau khi duyệt, reload danh sách hiện tại
+      if (subTab === "pending") {
+        loadPending();
+      } else {
+        // Nếu đang xem tab approved/rejected, gọi lại effect loadByStatus bằng cách setSubTab cho chính nó
+        setSubTab((prev) => prev);
+      }
     } catch (e) {
       console.error("Không thể duyệt bài viết", e);
       const msg = e.response?.data || e.response?.data?.message || "Không thể duyệt bài";
@@ -51,10 +117,11 @@ const AdminModerationPage = () => {
     try {
       await api.post(`/api/moderation/twits/${id}/reject`, { reason });
       toast.success("Đã từ chối bài viết");
-      if (tab === "ai") {
-        setAiItems((prev) => prev.filter((t) => t.id !== id));
+
+      if (subTab === "pending") {
+        loadPending();
       } else {
-        setReportedItems((prev) => prev.filter((t) => t.id !== id));
+        setSubTab((prev) => prev);
       }
     } catch (e) {
       console.error("Không thể từ chối bài viết", e);
@@ -94,12 +161,64 @@ const AdminModerationPage = () => {
         </Stack>
       </Box>
 
+      {/* Sub-tabs: PENDING / APPROVED / REJECTED */}
+      <Box sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            size="small"
+            variant={subTab === "pending" ? "contained" : "text"}
+            onClick={() => setSubTab("pending")}
+          >
+            Đang chờ
+          </Button>
+          <Button
+            size="small"
+            variant={subTab === "approved" ? "contained" : "text"}
+            onClick={() => setSubTab("approved")}
+          >
+            Đã duyệt
+          </Button>
+          <Button
+            size="small"
+            variant={subTab === "rejected" ? "contained" : "text"}
+            onClick={() => setSubTab("rejected")}
+          >
+            Bị từ chối
+          </Button>
+          {tab === "ai" && (
+            <Button
+              size="small"
+              variant={subTab === "blocked" ? "contained" : "text"}
+              onClick={() => setSubTab("blocked")}
+            >
+              Bị chặn
+            </Button>
+          )}
+        </Stack>
+      </Box>
+
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress size={28} />
         </Box>
       )}
-      {!loading && (tab === "ai" ? aiItems : reportedItems).length === 0 && (
+      {!loading && (() => {
+        const list =
+          tab === "ai"
+            ? subTab === "pending"
+              ? aiPending
+              : subTab === "approved"
+              ? aiApproved
+              : subTab === "rejected"
+              ? aiRejected
+              : aiBlocked
+            : subTab === "pending"
+            ? repPending
+            : subTab === "approved"
+            ? repApproved
+            : repRejected;
+        return list.length === 0;
+      })() && (
         <Box sx={{ py: 6, textAlign: "center", borderRadius: 4, border: "1px dashed rgba(148,163,184,0.4)" }}>
           <Typography sx={{ color: "rgba(15,23,42,0.6)" }}>
             Hiện không có bài nào đang chờ kiểm duyệt.
@@ -108,7 +227,23 @@ const AdminModerationPage = () => {
       )}
 
       <Stack spacing={3} sx={{ mt: 1 }}>
-        {(tab === "ai" ? aiItems : reportedItems).map((twit) => (
+        {(() => {
+          const list =
+            tab === "ai"
+              ? subTab === "pending"
+                ? aiPending
+                : subTab === "approved"
+                ? aiApproved
+                : subTab === "rejected"
+                ? aiRejected
+                : aiBlocked
+              : subTab === "pending"
+              ? repPending
+              : subTab === "approved"
+              ? repApproved
+              : repRejected;
+          return list;
+        })().map((twit) => (
           <Box
             key={twit.id}
             sx={{
@@ -125,7 +260,8 @@ const AdminModerationPage = () => {
               const reasonFromBackend = twit.moderationReason;
               let displayReason = reasonFromBackend;
 
-              if (!displayReason) {
+              // Chỉ hiển thị box lý do cho PENDING/REJECTED, không hiển thị cho APPROVED
+              if (status !== "APPROVED" && !displayReason) {
                 if (status === "PENDING") {
                   displayReason = "AI nghi ngờ một số điểm. Bài đang chờ duyệt thêm.";
                 } else if (status === "REJECTED") {
@@ -133,44 +269,46 @@ const AdminModerationPage = () => {
                 }
               }
 
-              if (!displayReason) return null;
+              if (!displayReason || status === "APPROVED") return null;
 
               return (
-              <Box
-                sx={{
-                  mt: 1,
-                  px: 1.5,
-                  py: 1,
-                  borderRadius: 2,
-                  bgcolor: "#fef3c7",
-                  border: "1px solid #facc15",
-                }}
-              >
-                <Typography variant="caption" sx={{ color: "#92400e" }}>
-                  Lý do kiểm duyệt: {displayReason}
-                </Typography>
-              </Box>
+                <Box
+                  sx={{
+                    mt: 1,
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 2,
+                    bgcolor: "#fef3c7",
+                    border: "1px solid #facc15",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "#92400e" }}>
+                    Lý do kiểm duyệt: {displayReason}
+                  </Typography>
+                </Box>
               );
             })()}
 
-            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
-              <Button
-                size="small"
-                variant="outlined"
-                color="error"
-                onClick={() => handleReject(twit.id)}
-              >
-                Từ chối
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="primary"
-                onClick={() => handleApprove(twit.id)}
-              >
-                Duyệt
-              </Button>
-            </Stack>
+            {subTab === "pending" && (
+              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleReject(twit.id)}
+                >
+                  Từ chối
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleApprove(twit.id)}
+                >
+                  Duyệt
+                </Button>
+              </Stack>
+            )}
           </Box>
         ))}
       </Stack>

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.social_media.myproject.model.Report;
 import com.social_media.myproject.model.Twit;
@@ -19,6 +20,9 @@ public class ReportServiceImplementation implements ReportService {
     @Autowired
     private ReportRepository reportRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @Override
     public Report createReport(User reporter, Twit twit, String reason) {
         Report r = new Report();
@@ -27,7 +31,11 @@ public class ReportServiceImplementation implements ReportService {
         r.setReason(reason);
         r.setStatus(STATUS_PENDING);
         r.setCreatedAt(LocalDateTime.now());
-        return reportRepository.save(r);
+        Report saved = reportRepository.save(r);
+        if (messagingTemplate != null) {
+            messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+        }
+        return saved;
     }
 
     @Override

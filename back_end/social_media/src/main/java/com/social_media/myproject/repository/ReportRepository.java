@@ -14,4 +14,6 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByTwitAndStatus(Twit twit, String status);
 
     List<Report> findByStatus(String status);
+
+    long countByStatus(String status);
 }

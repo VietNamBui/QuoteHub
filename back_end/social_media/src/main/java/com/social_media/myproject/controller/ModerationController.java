@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.social_media.myproject.dto.TwitDto;
 import com.social_media.myproject.dto.mapper.TwitDtoMapper;
@@ -68,6 +69,24 @@ public class ModerationController {
         java.util.List<Twit> pending = twitService.findPendingModerationTwits();
         java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
         for (Twit t : pending) {
+            TwitDto dto = TwitDtoMapper.toTwitDto(t, null);
+            if (dto != null) dtos.add(dto);
+        }
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
+    // Lấy danh sách twit theo trạng thái kiểm duyệt bất kỳ (APPROVED, REJECTED, PENDING,...)
+    @GetMapping("/twits")
+    public ResponseEntity<java.util.List<TwitDto>> getTwitsByStatus(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam("status") String status) throws UserException {
+        var user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        java.util.List<Twit> list = twitService.findTwitsByModerationStatus(status);
+        java.util.List<TwitDto> dtos = new java.util.ArrayList<>();
+        for (Twit t : list) {
             TwitDto dto = TwitDtoMapper.toTwitDto(t, null);
             if (dto != null) dtos.add(dto);
         }

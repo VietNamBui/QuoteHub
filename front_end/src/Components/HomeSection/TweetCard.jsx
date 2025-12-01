@@ -187,7 +187,7 @@ const TweetCard = ({ item, onOpenDetail }) => {
                   {moderationLabel}
                 </span>
               )}
-              {item?.user?.id !== currentUserId && (
+              {!isAdminInAdminView && item?.user?.id !== currentUserId && (
                 <Button
                   size="small"
                   variant={isAuthorFollowed ? "outlined" : "contained"}
@@ -204,8 +204,8 @@ const TweetCard = ({ item, onOpenDetail }) => {
                 </Button>
               )}
 
-              {/* Nút Report: chỉ hiện khi đã đăng nhập VÀ không phải bài của chính mình */}
-              {auth.user && item?.user?.id !== currentUserId && (
+              {/* Nút Report: chỉ hiện khi đã đăng nhập VÀ không phải bài của chính mình (không dùng trong admin view) */}
+              {auth.user && !isAdminInAdminView && item?.user?.id !== currentUserId && (
                 <Button
                   size="small"
                   variant="text"
