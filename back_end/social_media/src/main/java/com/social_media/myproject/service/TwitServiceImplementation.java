@@ -95,9 +95,10 @@ public class TwitServiceImplementation implements TwitService{
 		if (!"BLOCKED".equals(saved.getModerationStatus())) {
 			notificationService.createNewTwitNotificationForFollowers(user, saved);
 		}
-		// Báo cho admin rằng số liệu analytics có thay đổi
+		// Báo cho admin rằng số liệu analytics & moderation có thay đổi
 		if (messagingTemplate != null) {
 			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+			messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
 		}
 		
 		return saved;
@@ -107,6 +108,13 @@ public class TwitServiceImplementation implements TwitService{
 	public List<Twit> findAllTwit(User currentUser) {
 		// Lấy toàn bộ twit chính (isTwit = true), sort theo thời gian mới nhất
 		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		// Ẩn các bài đã bị REJECTED hoặc BLOCKED khỏi luồng chung
+		all = all.stream()
+			.filter(t -> {
+				String s = t.getModerationStatus();
+				return s == null || "APPROVED".equals(s) || "PENDING".equals(s);
+			})
+			.collect(Collectors.toList());
 		if (currentUser == null || all.isEmpty()) {
 			return all;
 		}
@@ -166,6 +174,13 @@ public class TwitServiceImplementation implements TwitService{
 
 		// Lấy toàn bộ twit chính theo thời gian mới nhất
 		List<Twit> all = twitRepository.findAllByIsTwitTrueOrderByCreatedAtDesc();
+		// Ẩn các bài đã bị REJECTED hoặc BLOCKED khỏi newsfeed
+		all = all.stream()
+			.filter(t -> {
+				String s = t.getModerationStatus();
+				return s == null || "APPROVED".equals(s) || "PENDING".equals(s);
+			})
+			.collect(Collectors.toList());
 		if (all.isEmpty()) {
 			return all;
 		}
@@ -312,6 +327,10 @@ public class TwitServiceImplementation implements TwitService{
 			if (replyFor.getUser() != null) {
 				notificationService.createReplyNotification(user, replyFor.getUser(), replyFor);
 			}
+		}
+		// Báo cho admin rằng moderation có thay đổi (reply bị nghi ngờ / bị chặn)
+		if (messagingTemplate != null) {
+			messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
 		}
 		
 		return replyFor;
@@ -478,6 +497,12 @@ public class TwitServiceImplementation implements TwitService{
 		Twit saved = twitRepository.save(twit);
 		if (messagingTemplate != null) {
 			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+			messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
+			// Báo cho client (newsfeed) biết bài này được giữ lại
+			java.util.Map<String, Object> payload = new java.util.HashMap<>();
+			payload.put("twitId", saved.getId());
+			payload.put("action", "SHOW");
+			messagingTemplate.convertAndSend("/topic/feed/moderation", payload);
 		}
 		return saved;
 	}
@@ -499,18 +524,28 @@ public class TwitServiceImplementation implements TwitService{
 		if (!reports.isEmpty()) {
 			reportRepository.saveAll(reports);
 		}
-		return twitRepository.save(twit);
+		Twit saved = twitRepository.save(twit);
+		if (messagingTemplate != null) {
+			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+			messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
+			// Báo cho client (newsfeed/profile) biết bài này bị ẩn
+			java.util.Map<String, Object> payload = new java.util.HashMap<>();
+			payload.put("twitId", saved.getId());
+			payload.put("action", "HIDE");
+			messagingTemplate.convertAndSend("/topic/feed/moderation", payload);
+		}
+		return saved;
 	}
 
 	@Override
 	public List<Twit> findPendingModerationTwits() {
-		return twitRepository.findByModerationStatus("PENDING");
+		return twitRepository.findByModerationStatusOrderByCreatedAtDesc("PENDING");
 	}
 
 	@Override
 	public List<Twit> findTwitsByModerationStatus(String status) {
 		if (status == null) return java.util.List.of();
-		return twitRepository.findByModerationStatus(status);
+		return twitRepository.findByModerationStatusOrderByCreatedAtDesc(status);
 	}
 
 }

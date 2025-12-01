@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { createTweet, getFeedTweets, findTwitsById } from './../../Store/Twit/Action';
 import { store } from './../../Store/store';
 import { uploadToCloudnary } from "../../Utils/uploadToCloudnary";
+import { connectFeedModerationSocket } from "../../Utils/feedModerationSocket";
 import TwitDetailModal from "../TwitDetails/TwitDetailModal";
 
 const validationSchema = Yup.object().shape({
@@ -25,6 +26,7 @@ const HomeSection = () => {
   const [currentRootTwitId, setCurrentRootTwitId] = useState(null);
   const [aiChecking, setAiChecking] = useState(false);
   const [aiResult, setAiResult] = useState(null); // { status, message }
+  const [visibleTwits, setVisibleTwits] = useState([]);
   const dispatch = useDispatch();
   const { twit, auth } = useSelector((store) => store);
   // console.log("twit",twit)
@@ -82,6 +84,34 @@ const HomeSection = () => {
   useEffect(()=>{
     dispatch(getFeedTweets())
   },[twit.like,twit.retwit])
+
+  // Đồng bộ visibleTwits với dữ liệu từ Redux, chỉ lấy các bài đã được cho phép hiển thị
+  useEffect(() => {
+    const baseList = (twit.twits || []).filter(
+      (item) => !item.moderationStatus || item.moderationStatus === "APPROVED"
+    );
+    setVisibleTwits(baseList);
+  }, [twit.twits]);
+
+  // Lắng nghe sự kiện moderation từ server để ẩn/hiện bài theo twitId
+  useEffect(() => {
+    const disconnect = connectFeedModerationSocket((event) => {
+      if (!event || !event.twitId || !event.action) return;
+      const id = event.twitId;
+      const action = event.action;
+
+      if (action === "HIDE") {
+        setVisibleTwits((prev) => prev.filter((t) => t.id !== id));
+      } else if (action === "SHOW") {
+        // Với SHOW, để đơn giản ta refetch lại feed để đảm bảo điều kiện follow, sort...
+        dispatch(getFeedTweets());
+      }
+    });
+
+    return () => {
+      disconnect && disconnect();
+    };
+  }, [dispatch]);
 
   // Lấy danh sách sách của user
   useEffect(() => {
@@ -152,6 +182,8 @@ const HomeSection = () => {
       <section>
         <h1 className="pb-4 text-2xl font-semibold opacity-90">Home</h1>
       </section>
+
+      {/* Form tạo tweet */}
       <section className="pb-6">
         <div className="flex space-x-4 rounded-3xl bg-white/80 shadow-md border border-slate-100 px-5 py-4">
           <Avatar
@@ -167,9 +199,9 @@ const HomeSection = () => {
               : null}
           </Avatar>
           <div className="w-full">
-            <form 
-                onSubmit={(e) => {
-                e.preventDefault();          // quan trọng để tránh reload page
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
                 handleSubmit(formik.values, formik);
               }}
             >
@@ -275,13 +307,8 @@ const HomeSection = () => {
                   className="border-none outline-none text-lg md:text-xl bg-transparent"
                   {...formik.getFieldProps("content")}
                 />
-                {/* {formik.errors.content && formik.touched.content && (
-                  <span className="text-red-500">{formik.errors.content}</span>
-                )} */}
               </div>
-              {/*<div>
-                            <img src="" alt="" />
-                        </div> */}
+
               <div className="flex justify-between items-center mt-5">
                 <div className="flex space-x-4 items-center text-slate-600">
                   <label className="flex items-center space-x-2 rounded-md cursor-pointer">
@@ -314,6 +341,7 @@ const HomeSection = () => {
                 </div>
               </div>
             </form>
+
             <div className="mt-3">
               {selectImage && (
                 <img
@@ -326,24 +354,14 @@ const HomeSection = () => {
           </div>
         </div>
       </section>
+
+      {/* Danh sách tweet trong feed */}
       <section className="space-y-4">
-        {(twit.twits || [])
-          .filter(
-            (item) =>
-              !item.moderationStatus || item.moderationStatus === "APPROVED"
-          )
-          .map((item) => (
-            <TweetCard
-              key={item.id}
-              item={item}
-              onOpenDetail={() => {
-                setCurrentRootTwitId(item.id);
-                dispatch(findTwitsById(item.id));
-                setOpenTwitDetail(true);
-              }}
-            />
-          ))}
+        {visibleTwits.map((item) => (
+          <TweetCard key={item.id} item={item} />
+        ))}
       </section>
+
       <TwitDetailModal
         open={openTwitDetail}
         onClose={() => setOpenTwitDetail(false)}
@@ -405,6 +423,6 @@ const HomeSection = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default HomeSection;

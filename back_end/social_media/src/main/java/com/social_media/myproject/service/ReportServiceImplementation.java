@@ -34,12 +34,13 @@ public class ReportServiceImplementation implements ReportService {
         Report saved = reportRepository.save(r);
         if (messagingTemplate != null) {
             messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
+            messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
         }
         return saved;
     }
 
     @Override
     public List<Report> findPendingReports() {
-        return reportRepository.findByStatus(STATUS_PENDING);
+        return reportRepository.findByStatusOrderByCreatedAtDesc(STATUS_PENDING);
     }
 }

@@ -27,8 +27,19 @@ function App() {
     <div>
       <Routes>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        {/* Dùng jwt để quyết định đã đăng nhập hay chưa, tránh phụ thuộc vào user */}
-        <Route path='/*' element={jwt ? <HomePage /> : <Authentication />} />
+        {/* Khi đã có jwt nhưng chưa load xong user, hiển thị trạng thái loading thay vì render Home rồi nhảy admin */}
+        <Route
+          path='/*'
+          element={
+            jwt
+              ? auth.user
+                ? <HomePage />
+                : <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', color: '#64748b' }}>
+                    Đang tải phiên đăng nhập...
+                  </div>
+              : <Authentication />
+          }
+        />
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />

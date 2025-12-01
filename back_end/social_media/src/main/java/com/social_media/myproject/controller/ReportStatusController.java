@@ -41,7 +41,7 @@ public class ReportStatusController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        List<Report> reports = reportRepository.findByStatus(status);
+        List<Report> reports = reportRepository.findByStatusOrderByCreatedAtDesc(status);
         java.util.Set<Long> seen = new java.util.HashSet<>();
         List<TwitDto> dtos = new ArrayList<>();
         for (Report r : reports) {

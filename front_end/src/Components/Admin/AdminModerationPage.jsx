@@ -3,11 +3,16 @@ import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material"
 import { toast } from "react-toastify";
 import { api } from "../../config/api";
 import TweetCard from "../HomeSection/TweetCard";
+import { connectModerationSocket } from "../../Utils/moderationSocket";
 
 const AdminModerationPage = () => {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("ai"); // "ai" | "reports"
   const [subTab, setSubTab] = useState("pending"); // "pending" | "approved" | "rejected" | "blocked" (AI only)
+
+  // Các id twit mới được thêm gần đây để highlight
+  const [highlightIds, setHighlightIds] = useState([]);
+  const [initialized, setInitialized] = useState(false);
 
   // AI nghi ngờ
   const [aiPending, setAiPending] = useState([]);
@@ -31,6 +36,28 @@ const AdminModerationPage = () => {
       const aiList = Array.isArray(aiRes.data) ? aiRes.data : [];
       const repList = Array.isArray(reportRes.data) ? reportRes.data : [];
 
+      // Nếu là lần load đầu tiên, chỉ khởi tạo danh sách, không highlight
+      if (initialized) {
+        // Tính các id mới xuất hiện trong pending để highlight
+        const prevAiIds = aiPending.map((t) => t.id);
+        const prevRepIds = repPending.map((t) => t.id);
+        const newAiIds = aiList.filter((t) => !prevAiIds.includes(t.id)).map((t) => t.id);
+        const newRepIds = repList.filter((t) => !prevRepIds.includes(t.id)).map((t) => t.id);
+        const newIds = [...newAiIds, ...newRepIds];
+
+        if (newIds.length > 0) {
+          setHighlightIds((prev) => {
+            const set = new Set(prev);
+            newIds.forEach((id) => set.add(id));
+            return Array.from(set);
+          });
+          // Xoá highlight sau 3 giây
+          setTimeout(() => {
+            setHighlightIds((prev) => prev.filter((id) => !newIds.includes(id)));
+          }, 3000);
+        }
+      }
+
       setAiPending(aiList);
       setAiApproved([]);
       setAiRejected([]);
@@ -39,6 +66,10 @@ const AdminModerationPage = () => {
       setRepPending(repList);
       setRepApproved([]);
       setRepRejected([]);
+
+      if (!initialized) {
+        setInitialized(true);
+      }
     } catch (e) {
       console.error("Không thể tải danh sách bài bị báo cáo", e);
       toast.error("Không thể tải danh sách bài bị báo cáo");
@@ -50,6 +81,22 @@ const AdminModerationPage = () => {
   useEffect(() => {
     loadPending();
   }, []);
+
+  // Realtime: lắng nghe thay đổi moderation qua WebSocket
+  useEffect(() => {
+    const disconnect = connectModerationSocket(() => {
+      // Nếu đang xem PENDING thì reload pending, ngược lại kích hoạt lại effect loadByStatus
+      if (subTab === "pending") {
+        loadPending();
+      } else {
+        setSubTab((prev) => prev); // giữ nguyên nhưng kích hoạt lại useEffect phụ thuộc subTab
+      }
+    });
+
+    return () => {
+      disconnect && disconnect();
+    };
+  }, [subTab, tab]);
 
   // Load theo trạng thái khi đổi subTab hoặc tab lớn
   useEffect(() => {
@@ -95,8 +142,21 @@ const AdminModerationPage = () => {
 
   const handleApprove = async (id) => {
     try {
-      await api.post(`/api/moderation/twits/${id}/approve`);
-      toast.success("Đã duyệt bài viết");
+      // Nút chính: chấp nhận cảnh báo/báo cáo => ẩn bài (gọi /reject)
+      let reason = "Bài viết vi phạm sau khi xem xét";
+      if (tab === "ai") {
+        const input = window.prompt(
+          "Lý do ẩn bài này?",
+          "Bài viết vi phạm sau khi xem xét cảnh báo của AI"
+        );
+        if (!input) return;
+        reason = input;
+      } else {
+        reason = "Bài viết vi phạm sau khi xem xét báo cáo của người dùng";
+      }
+
+      await api.post(`/api/moderation/twits/${id}/reject`, { reason });
+      toast.success("Đã chấp nhận cảnh báo/báo cáo, bài sẽ bị ẩn khỏi bảng tin");
       // Sau khi duyệt, reload danh sách hiện tại
       if (subTab === "pending") {
         loadPending();
@@ -112,11 +172,12 @@ const AdminModerationPage = () => {
   };
 
   const handleReject = async (id) => {
-    const reason = window.prompt("Lý do từ chối bài viết này?", "Vi phạm tiêu chuẩn cộng đồng");
-    if (!reason) return;
     try {
-      await api.post(`/api/moderation/twits/${id}/reject`, { reason });
-      toast.success("Đã từ chối bài viết");
+      // Nút phụ: bỏ qua cảnh báo/báo cáo, giữ bài lại (gọi /approve)
+      await api.post(`/api/moderation/twits/${id}/approve`);
+      toast.success(
+        tab === "ai" ? "Đã bỏ qua cảnh báo, bài vẫn hiển thị" : "Đã từ chối báo cáo, bài vẫn hiển thị"
+      );
 
       if (subTab === "pending") {
         loadPending();
@@ -169,21 +230,21 @@ const AdminModerationPage = () => {
             variant={subTab === "pending" ? "contained" : "text"}
             onClick={() => setSubTab("pending")}
           >
-            Đang chờ
+            {tab === "ai" ? "Đang chờ duyệt" : "Báo cáo chờ xử lý"}
           </Button>
           <Button
             size="small"
             variant={subTab === "approved" ? "contained" : "text"}
             onClick={() => setSubTab("approved")}
           >
-            Đã duyệt
+            {tab === "ai" ? "Bài được cho phép" : "Báo cáo bị từ chối (bài giữ lại)"}
           </Button>
           <Button
             size="small"
             variant={subTab === "rejected" ? "contained" : "text"}
             onClick={() => setSubTab("rejected")}
           >
-            Bị từ chối
+            {tab === "ai" ? "Bài bị ẩn (vi phạm)" : "Bài vi phạm (báo cáo đúng)"}
           </Button>
           {tab === "ai" && (
             <Button
@@ -248,9 +309,12 @@ const AdminModerationPage = () => {
             key={twit.id}
             sx={{
               borderRadius: 3,
-              border: "1px solid rgba(148,163,184,0.35)",
+              border: highlightIds.includes(twit.id)
+                ? "1px solid #fdba74"
+                : "1px solid rgba(148,163,184,0.35)",
               p: 1.5,
-              bgcolor: "#f8fafc",
+              bgcolor: highlightIds.includes(twit.id) ? "#fff7ed" : "#f8fafc",
+              transition: "background-color 0.4s ease, border-color 0.4s ease",
             }}
           >
             <TweetCard item={twit} />
@@ -297,7 +361,7 @@ const AdminModerationPage = () => {
                   color="error"
                   onClick={() => handleReject(twit.id)}
                 >
-                  Từ chối
+                  {tab === "ai" ? "Bỏ qua cảnh báo (giữ bài)" : "Từ chối báo cáo (giữ bài)"}
                 </Button>
                 <Button
                   size="small"
@@ -305,7 +369,7 @@ const AdminModerationPage = () => {
                   color="primary"
                   onClick={() => handleApprove(twit.id)}
                 >
-                  Duyệt
+                  {tab === "ai" ? "Chấp nhận cảnh báo (ẩn bài)" : "Chấp nhận báo cáo (ẩn bài)"}
                 </Button>
               </Stack>
             )}

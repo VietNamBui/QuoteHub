@@ -14,10 +14,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { store } from "../../Store/store";
 import { findUserById, followUserAction } from "../../Store/Auth/Action";
 import { getUsersTweet, findTwitsByLikeContaineUser, findUserReplies } from "../../Store/Twit/Action";
+import { connectFeedModerationSocket } from "../../Utils/feedModerationSocket";
 
 const Profile = () => {
   const [tabValue, setTabValue] = useState("1");
   const [moderationTab, setModerationTab] = useState("all"); // all, approved, pending, rejected
+  const [visibleUserTwits, setVisibleUserTwits] = useState([]);
+  const [visibleReplies, setVisibleReplies] = useState([]);
+  const [visibleLiked, setVisibleLiked] = useState([]);
   const navigate = useNavigate();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const handleOpenProfileModel = () => setOpenProfileModal(true);
@@ -51,6 +55,33 @@ const Profile = () => {
 dispatch(findUserById(id))
 dispatch(getUsersTweet(id))
   },[id])
+
+  useEffect(() => {
+    setVisibleUserTwits(twit.twits || []);
+  }, [twit.twits]);
+
+  useEffect(() => {
+    setVisibleReplies(twit.repliesTwits || []);
+  }, [twit.repliesTwits]);
+
+  useEffect(() => {
+    setVisibleLiked(twit.likedTwits || []);
+  }, [twit.likedTwits]);
+
+  useEffect(() => {
+    const disconnect = connectFeedModerationSocket((event) => {
+      if (!event || !event.twitId || !event.action) return;
+      // Bất kỳ thay đổi moderation nào liên quan tới twit
+      // cũng refetch lại toàn bộ dữ liệu profile để đảm bảo trạng thái đúng
+      dispatch(getUsersTweet(id));
+      dispatch(findUserReplies(id));
+      dispatch(findTwitsByLikeContaineUser(id));
+    });
+
+    return () => {
+      disconnect && disconnect();
+    };
+  }, [dispatch, id]);
 
   return (
     <div>
@@ -199,7 +230,7 @@ dispatch(getUsersTweet(id))
               </div>
 
               {(() => {
-                const allTwits = twit.twits || [];
+                const allTwits = visibleUserTwits || [];
                 if (allTwits.length === 0) {
                   return <p className="text-gray-500">User này chưa có twit nào.</p>;
                 }
@@ -237,8 +268,8 @@ dispatch(getUsersTweet(id))
               })()}
             </TabPanel>
             <TabPanel value="2">
-              {twit.repliesTwits && twit.repliesTwits.length > 0 ? (
-                twit.repliesTwits.map((item) => (
+              {visibleReplies && visibleReplies.length > 0 ? (
+                visibleReplies.map((item) => (
                   <TweetCard key={item.id} item={item} />
                 ))
               ) : (
@@ -247,8 +278,8 @@ dispatch(getUsersTweet(id))
             </TabPanel>
             <TabPanel value="3">Media</TabPanel>
             <TabPanel value="4">
-              {twit.likedTwits && twit.likedTwits.length > 0 ? (
-                twit.likedTwits.map((item) => (
+              {visibleLiked && visibleLiked.length > 0 ? (
+                visibleLiked.map((item) => (
                   <TweetCard key={item.id} item={item} />
                 ))
               ) : (
