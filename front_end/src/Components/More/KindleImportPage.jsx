@@ -41,7 +41,7 @@ const KindleImportPage = () => {
         },
       });
 
-      setMessage("Import Kindle thành công. Vào mục Sách để xem các quote mới.");
+      setMessage("Import Kindle thành công. Vào tab Books để xem các quote mới.");
     } catch (err) {
       setError("Upload thất bại. Hãy kiểm tra lại file HTML export từ Kindle.");
     } finally {

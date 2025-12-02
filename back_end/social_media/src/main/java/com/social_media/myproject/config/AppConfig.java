@@ -27,9 +27,14 @@ public class AppConfig {
 		
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		.and()
-		.authorizeHttpRequests(Authorize->Authorize.requestMatchers("/api/**").authenticated()
+		.authorizeHttpRequests(Authorize -> Authorize
+				// Allow unauthenticated access for email/webhook endpoints
+				.requestMatchers("/api/email/import-highlights", "/api/email/inbound-webhook").permitAll()
+				// Require authentication for all other /api/** endpoints
+				.requestMatchers("/api/**").authenticated()
 				.anyRequest().permitAll()
-				).addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
+			)
+		.addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
 		.csrf().disable()
 		.cors().configurationSource(corsConfigrationSource()).and()
 		.httpBasic().and().formLogin();

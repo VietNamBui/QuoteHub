@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../config/api";
 import { Box, CircularProgress, Grid, Paper, Typography, Tabs, Tab } from "@mui/material";
 import KindleImportPage from "./KindleImportPage";
+import KindleEmailImportPage from "./KindleEmailImportPage";
 import MoreClassificationPage from "./MoreClassificationPage";
 
 const MorePage = () => {
@@ -71,6 +72,11 @@ const MorePage = () => {
           sx={{ textTransform: "none", fontWeight: 600 }}
         />
         <Tab
+          label="Kindle Email Import"
+          value="kindleEmail"
+          sx={{ textTransform: "none", fontWeight: 600, ml: 2 }}
+        />
+        <Tab
           label="Classification"
           value="classification"
           sx={{ textTransform: "none", fontWeight: 600, ml: 2 }}
@@ -134,6 +140,12 @@ const MorePage = () => {
       {tab === "kindle" && (
         <Box>
           <KindleImportPage />
+        </Box>
+      )}
+
+      {tab === "kindleEmail" && (
+        <Box>
+          <KindleEmailImportPage />
         </Box>
       )}
 
