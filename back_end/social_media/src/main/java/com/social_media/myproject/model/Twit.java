@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -43,6 +44,10 @@ public class Twit {
     @ManyToOne
     @JoinColumn(name = "quote_id")
     private Quote quote;
+
+    // Snapshot nội dung quote tại thời điểm đăng twit
+    @Column(columnDefinition = "LONGTEXT")
+    private String quoteSnapshot;
 
     @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL)
     private List<Like> likes = new ArrayList<>();

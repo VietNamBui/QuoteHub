@@ -52,9 +52,12 @@ public class TwitDtoMapper {
 		twitDto.setModerationStatus(twit.getModerationStatus());
 		twitDto.setModerationReason(twit.getModerationReason());
 		
+		// Luôn dùng snapshot cho nội dung quote hiển thị
+		if (twit.getQuoteSnapshot() != null) {
+			twitDto.setQuoteHighlight(twit.getQuoteSnapshot());
+		}
 		Quote quote = twit.getQuote();
 		if (quote != null) {
-			twitDto.setQuoteHighlight(quote.getHighlight());
 			twitDto.setQuoteId(quote.getId());
 			if (quote.getBook() != null) {
 				twitDto.setQuoteBookTitle(quote.getBook().getTitle());
@@ -71,13 +74,14 @@ public class TwitDtoMapper {
 				UserDto parentUser = UserDtoMapper.toUserDto(parent.getUser());
 				twitDto.setParentUser(parentUser);
 			}
+			// dùng snapshot của bài gốc cho nội dung quote
+			if (parent.getQuoteSnapshot() != null) {
+				twitDto.setParentQuoteHighlight(parent.getQuoteSnapshot());
+			}
 			Quote pQuote = parent.getQuote();
-			if (pQuote != null) {
-				twitDto.setParentQuoteHighlight(pQuote.getHighlight());
-				if (pQuote.getBook() != null) {
-					twitDto.setParentQuoteBookTitle(pQuote.getBook().getTitle());
-					twitDto.setParentQuoteBookAuthor(pQuote.getBook().getAuthor());
-				}
+			if (pQuote != null && pQuote.getBook() != null) {
+				twitDto.setParentQuoteBookTitle(pQuote.getBook().getTitle());
+				twitDto.setParentQuoteBookAuthor(pQuote.getBook().getAuthor());
 			}
 		}
 			

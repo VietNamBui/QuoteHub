@@ -42,7 +42,7 @@ public class Quote {
     @JoinColumn(name = "user_id")
     private User user;
     
-    @OneToMany(mappedBy = "quote", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "quote")
     private List<Twit> twits = new ArrayList<>();
     
     

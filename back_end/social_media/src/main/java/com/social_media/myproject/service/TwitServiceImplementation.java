@@ -73,6 +73,7 @@ public class TwitServiceImplementation implements TwitService{
 		twit.setIsReply(false);
 		twit.setIsTwit(true);
 		twit.setQuote(quote);
+		twit.setQuoteSnapshot(quote.getHighlight());  // NEW: snapshot nội dung quote
 		// Ghi lại thông tin kiểm duyệt từ AI
 		twit.setAiRiskScore(mr.riskScore);
 		twit.setAiCategories(mr.categories == null || mr.categories.isEmpty()
@@ -276,6 +277,7 @@ public class TwitServiceImplementation implements TwitService{
 			Quote quote = quoteRepository.findById(quoteId)
 				.orElseThrow(() -> new TwitException("Quote not found with id " + quoteId));
 			twit.setQuote(quote);
+			twit.setQuoteSnapshot(quote.getHighlight());  // NEW: cập nhật lại snapshot khi đổi quote
 		}
 		return twitRepository.save(twit);
 	}

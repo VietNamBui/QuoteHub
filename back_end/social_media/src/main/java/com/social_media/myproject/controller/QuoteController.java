@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -101,7 +102,7 @@ public class QuoteController {
             @RequestHeader("Authorization") String jwt
     ) throws UserException {
         User user = userService.findUserProfileByJwt(jwt);
-        Book book = bookRepository.findById(bookId)
+        Book book = bookRepository.findByIdAndUser(bookId, user)
                 .orElseThrow(() -> new RuntimeException("Book not found with id " + bookId));
         List<Quote> quotes = quoteService.getQuotesOfBookForUser(user, book);
 
@@ -133,6 +134,33 @@ public class QuoteController {
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{quoteId}")
+    public ResponseEntity<?> deleteQuote(
+            @PathVariable Long quoteId,
+            @RequestHeader("Authorization") String jwt) throws UserException {
+        User user = userService.findUserProfileByJwt(jwt);
+        quoteService.deleteQuoteForUser(quoteId, user);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/book/{bookId}")
+    public ResponseEntity<?> deleteBookQuotes(
+            @PathVariable Long bookId,
+            @RequestHeader("Authorization") String jwt) throws UserException {
+        User user = userService.findUserProfileByJwt(jwt);
+        quoteService.deleteBookForUser(bookId, user);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/books/{bookId}")
+    public ResponseEntity<?> deleteBookAndAllQuotes(
+            @PathVariable Long bookId,
+            @RequestHeader("Authorization") String jwt) throws UserException {
+        User user = userService.findUserProfileByJwt(jwt);
+        quoteService.deleteBookAndQuotesForUser(bookId, user);
+        return ResponseEntity.ok().build();
     }
 
 }

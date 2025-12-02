@@ -34,20 +34,21 @@ public class KindleService {
             String html = new String(file.getBytes(), StandardCharsets.UTF_8);
             Document doc = Jsoup.parse(html);
 
+            User user = userRepo.findById(userId).orElseThrow();
+
             // 1. Lấy thông tin sách
             String title = doc.select("div.bookTitle").text();
             String authors = doc.select("div.authors").text();
 
-            // 2. Kiểm tra sách tồn tại?
-            Book book = bookRepo.findByTitleAndAuthor(title, authors)
+            // 2. Kiểm tra sách tồn tại theo user + title + author
+            Book book = bookRepo.findByUserAndTitleAndAuthor(user, title, authors)
                     .orElseGet(() -> {
                         Book b = new Book();
                         b.setTitle(title);
                         b.setAuthor(authors);
+                        b.setUser(user);
                         return bookRepo.save(b);
                     });
-
-            User user = userRepo.findById(userId).orElseThrow();
 
             // 3. Lấy danh sách highlight
             Elements headings = doc.select("div.noteHeading");

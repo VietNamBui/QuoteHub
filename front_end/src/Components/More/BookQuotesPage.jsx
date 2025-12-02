@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../config/api";
-import { Box, Card, CardContent, CircularProgress, Divider, Typography } from "@mui/material";
+import { Box, Card, CardContent, CircularProgress, Divider, Typography, Button } from "@mui/material";
+import { toast } from "react-toastify";
 
 const BookQuotesPage = () => {
   const { bookId } = useParams();
@@ -9,6 +10,9 @@ const BookQuotesPage = () => {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingBook, setDeletingBook] = useState(false);
+  const [deletingQuoteId, setDeletingQuoteId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -16,9 +20,6 @@ const BookQuotesPage = () => {
         setLoading(true);
         const { data } = await api.get(`/api/quotes/book/${bookId}`);
         setQuotes(data || []);
-        if (data && data.length > 0) {
-          setBook(data[0].book || null);
-        }
       } catch (err) {
         setError("Không thể tải danh sách quote");
       } finally {
@@ -30,6 +31,40 @@ const BookQuotesPage = () => {
       fetchQuotes();
     }
   }, [bookId]);
+
+  const handleDeleteQuote = async (quoteId) => {
+    if (!quoteId) return;
+    const ok = window.confirm("Bạn có chắc muốn xóa đoạn quote này?");
+    if (!ok) return;
+    try {
+      setDeletingQuoteId(quoteId);
+      await api.delete(`/api/quotes/${quoteId}`);
+      setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
+      toast.success("Đã xóa quote.");
+    } catch (err) {
+      alert("Xóa quote thất bại. Hãy thử lại.");
+    } finally {
+      setDeletingQuoteId(null);
+    }
+  };
+
+  const handleDeleteBook = async () => {
+    if (!bookId) return;
+    const ok = window.confirm(
+      "Bạn có chắc muốn xóa toàn bộ các đoạn quote của cuốn sách này? Hành động này không thể hoàn tác."
+    );
+    if (!ok) return;
+    try {
+      setDeletingBook(true);
+      await api.delete(`/api/quotes/book/${bookId}`);
+      toast.success("Đã xóa toàn bộ quote của sách này.");
+      navigate("/more", { replace: true });
+    } catch (err) {
+      alert("Xóa book thất bại. Hãy thử lại.");
+    } finally {
+      setDeletingBook(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,6 +96,20 @@ const BookQuotesPage = () => {
             {book.author} · {book.year}
           </Typography>
         )}
+
+        {quotes.length > 0 && (
+          <Box mt={2}>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              disabled={deletingBook}
+              onClick={handleDeleteBook}
+            >
+              {deletingBook ? "Đang xóa..." : "Xóa toàn bộ quote của sách này"}
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {!quotes.length ? (
@@ -86,6 +135,17 @@ const BookQuotesPage = () => {
                 <Typography variant="caption" sx={{ color: "rgba(15,23,42,0.6)" }}>
                   Vị trí: {q.positionType} · {q.positionValue}
                 </Typography>
+                <Box mt={1.5} display="flex" justifyContent="flex-end">
+                  <Button
+                    variant="text"
+                    color="error"
+                    size="small"
+                    onClick={() => handleDeleteQuote(q.id)}
+                    disabled={deletingQuoteId === q.id}
+                  >
+                    {deletingQuoteId === q.id ? "Đang xóa..." : "Xóa quote"}
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           ))}

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.social_media.myproject.model.Twit;
 import com.social_media.myproject.model.User;
+import com.social_media.myproject.model.Quote;
 
 public interface TwitRepository extends JpaRepository<Twit, Long>{
 	
@@ -25,5 +26,7 @@ public interface TwitRepository extends JpaRepository<Twit, Long>{
 	
 	@Query("Select t From Twit t JOIN t.likes I where I.user.id=:userId")
 	List<Twit> findByLikesUser_id(Long userId);
+
+	List<Twit> findByQuote(Quote quote);
 
 }
