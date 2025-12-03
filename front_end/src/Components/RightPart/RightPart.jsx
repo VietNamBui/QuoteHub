@@ -87,7 +87,7 @@ const RightPart = () => {
             </Typography>
           ) : (
             <Stack spacing={2}>
-              {bookTrends.map((b) => (
+              {bookTrends.slice(0, 2).map((b) => (
                 <Stack key={b.bookId} direction="row" alignItems="flex-start" spacing={1.5}>
                   <Box flex={1}>
                     <Typography variant="caption" sx={{ color: "rgba(15,23,42,0.5)" }}>
@@ -134,7 +134,7 @@ const RightPart = () => {
               </Typography>
             ) : (
               <Stack spacing={2}>
-                {friendBookTrends.map((b) => (
+                {friendBookTrends.slice(0, 2).map((b) => (
                   <Stack key={b.bookId} direction="row" alignItems="flex-start" spacing={1.5}>
                     <Box flex={1}>
                       <Typography variant="caption" sx={{ color: "rgba(15,23,42,0.5)" }}>
