@@ -9,6 +9,6 @@ public class BookSummaryDto {
     private Long id;
     private String title;
     private String author;
-    private int year;
     private int quotesCount;
+    private String aiMetadata;
 }

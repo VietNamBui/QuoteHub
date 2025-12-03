@@ -42,6 +42,8 @@ public interface TwitService {
 	Twit approveModeration(Long twitId) throws TwitException;
 	Twit rejectModeration(Long twitId, String reason) throws TwitException;
 	public List<Twit> findPendingModerationTwits();
+	// Admin moderation for replies
+	Twit approveReplyModeration(Long replyId) throws TwitException;
 
 	// Lấy danh sách twit theo trạng thái kiểm duyệt bất kỳ (APPROVED, REJECTED, PENDING,...)
 	public List<Twit> findTwitsByModerationStatus(String status);

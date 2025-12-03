@@ -14,6 +14,7 @@ const KindleEmailImportPage = () => {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
+  const [historySuccess, setHistorySuccess] = useState("");
 
   const [copyMessage, setCopyMessage] = useState("");
 
@@ -35,6 +36,7 @@ const KindleEmailImportPage = () => {
       try {
         setHistoryLoading(true);
         setHistoryError("");
+        setHistorySuccess("");
         const { data } = await api.get("/api/email/import-history");
         const list = Array.isArray(data) ? data : [];
         setHistory(list);
@@ -96,7 +98,7 @@ const KindleEmailImportPage = () => {
         }}
       >
         <Typography variant="subtitle2" sx={{ mb: 1, color: "rgba(15,23,42,0.8)" }}>
-          Địa chỉ email Kindle của bạn
+          Địa chỉ email
         </Typography>
 
         {emailLoading ? (
@@ -128,10 +130,18 @@ const KindleEmailImportPage = () => {
 
         <Typography
           variant="caption"
-          sx={{ display: "block", mt: 1.5, color: "rgba(15,23,42,0.7)" }}
+          sx={{
+            display: "block",
+            mt: 1.5,
+            px: 1.5,
+            py: 0.5,
+          }}
         >
-          Hãy thêm địa chỉ này vào danh sách email được phép gửi tài liệu trong Kindle và chọn
-          "Share" / "Send to" để gửi highlight hoặc sách tới đây.
+          <Box component="span" sx={{ color: "#b91c1c", fontWeight: 700 }}>
+            Lưu ý quan trọng:
+          </Box>{" "}
+          Bạn phải gửi email từ chính địa chỉ đã đăng ký tài khoản. Email gửi từ địa chỉ khác sẽ
+          không được hệ thống chấp nhận.
         </Typography>
 
         {copyMessage && (
@@ -140,9 +150,32 @@ const KindleEmailImportPage = () => {
       </Box>
 
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
-          Lịch sử các email đã gửi
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Lịch sử các email đã gửi
+          </Typography>
+          {history.length > 0 && (
+            <Button
+              variant="text"
+              color="error"
+              size="small"
+              onClick={async () => {
+                if (!window.confirm("Bạn có chắc muốn xoá toàn bộ lịch sử email import?")) return;
+                try {
+                  await api.delete("/api/email/import-history");
+                  setHistory([]);
+                  setHistoryError("");
+                  setHistorySuccess("Đã xoá toàn bộ lịch sử email import.");
+                } catch (err) {
+                  alert("Không thể xoá lịch sử. Hãy thử lại sau.");
+                }
+              }}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Xoá tất cả lịch sử
+            </Button>
+          )}
+        </Box>
 
         {historyLoading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="120px">
@@ -151,6 +184,10 @@ const KindleEmailImportPage = () => {
         ) : historyError ? (
           <Typography variant="body2" sx={{ color: "#dc2626" }}>
             {historyError}
+          </Typography>
+        ) : historySuccess ? (
+          <Typography variant="body2" sx={{ color: "#16a34a", mt: 1 }}>
+            {historySuccess}
           </Typography>
         ) : !history.length ? (
           <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.7)", mt: 1 }}>

@@ -20,6 +20,4 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
 
     List<Quote> findByUserAndBook(User user, Book book);
 
-    List<Quote> findByUserAndLabelsIsEmpty(User user);
-
 }

@@ -17,8 +17,9 @@ import FavoriteOutlined from "@mui/icons-material/FavoriteOutlined";
 import { useNavigate } from "react-router-dom";
 import ReplyModal from "../HomeSection/ReplyModal";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import { useDispatch } from "react-redux";
-import { findTwitsById, createReTweet, likeTweet } from "../../Store/Twit/Action";
+import { useDispatch, useSelector } from "react-redux";
+import { findTwitsById, createReTweet, likeTweet, reportTweet } from "../../Store/Twit/Action";
+import { connectFeedModerationSocket } from "../../Utils/feedModerationSocket";
 
 const modalStyle = {
   position: "absolute",
@@ -38,10 +39,12 @@ const modalStyle = {
 const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { auth } = useSelector((store) => store);
   const [openReplyModal, setOpenReplyModal] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const commentsRef = useRef(null);
+  const twitId = twit?.id;
 
   const handleBackToRoot = () => {
     if (!rootId || !twit || twit.id === rootId) return;
@@ -60,6 +63,14 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
     dispatch(findTwitsById(twit.id));
   };
 
+  const handleReportReply = (replyNode) => {
+    if (!replyNode?.id) return;
+    const defaultReason = "Nội dung bình luận không phù hợp";
+    const reason = window.prompt("Lý do báo cáo bình luận này?", defaultReason);
+    if (!reason) return;
+    dispatch(reportTweet(replyNode.id, reason));
+  };
+
   const handleOpenReplyFor = (target) => {
     setReplyTarget(target || twit);
     setOpenReplyModal(true);
@@ -70,6 +81,24 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
   };
 
   const replies = twit?.replyTwits || [];
+
+  // Lắng nghe sự kiện SHOW_REPLY cho twit hiện tại để cập nhật realtime
+  useEffect(() => {
+    if (!twitId) return;
+    const disconnect = connectFeedModerationSocket((event) => {
+      if (!event || !event.twitId || !event.action) return;
+      if (
+        (event.action === "SHOW_REPLY" || event.action === "HIDE_REPLY") &&
+        event.twitId === twitId &&
+        event.replyId
+      ) {
+        dispatch(findTwitsById(twitId));
+      }
+    });
+    return () => {
+      disconnect && disconnect();
+    };
+  }, [twitId, dispatch]);
 
   useEffect(() => {
     if (commentsRef.current) {
@@ -88,15 +117,22 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
       : `${node.content.slice(0, maxLength)}...`;
     const indent = depth > 0 ? 2 : 0;
 
+    const userImg = node.user?.image;
+    const currentUserId = auth.user?.id;
+    const avatarSrc = (() => {
+      if (!userImg) return undefined;
+      return userImg.startsWith("/") ? `http://localhost:5454${userImg}` : userImg;
+    })();
+
     return (
       <Box sx={{ display: "flex", mb: 2.5, pl: indent }}>
         <Avatar
           alt={node.user?.fullName || node.user?.email || "U"}
-          src={node.user?.avatar || undefined}
+          src={avatarSrc}
           sx={{ mr: 1.5, cursor: "pointer", width: depth > 0 ? 32 : 40, height: depth > 0 ? 32 : 40 }}
           onClick={() => navigate(`/profile/${node.user?.id}`)}
         >
-          {!node.user?.avatar && (node.user?.fullName || node.user?.email)
+          {!userImg && (node.user?.fullName || node.user?.email)
             ? (node.user.fullName || node.user.email).trim().charAt(0).toUpperCase()
             : null}
         </Avatar>
@@ -110,13 +146,24 @@ const TwitDetailModal = ({ open, onClose, twit, rootId }) => {
                 @{node.user?.email || node.user?.username || "unknown"} · 2m
               </Typography>
             </Box>
-            <Button
-              size="small"
-              sx={{ textTransform: "none", fontSize: 12, color: "#2563eb" }}
-              onClick={() => handleOpenReplyFor(node)}
-            >
-              Trả lời
-            </Button>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Button
+                size="small"
+                sx={{ textTransform: "none", fontSize: 12, color: "#2563eb" }}
+                onClick={() => handleOpenReplyFor(node)}
+              >
+                Trả lời
+              </Button>
+              {auth.user && node.user?.id && node.user.id !== currentUserId && (
+                <Button
+                  size="small"
+                  sx={{ textTransform: "none", fontSize: 12, color: "#ef4444" }}
+                  onClick={() => handleReportReply(node)}
+                >
+                  Báo cáo
+                </Button>
+              )}
+            </Stack>
           </Box>
           <Typography sx={{ mt: 1, fontSize: 14, color: "#0f172a" }}>
             {displayContent}

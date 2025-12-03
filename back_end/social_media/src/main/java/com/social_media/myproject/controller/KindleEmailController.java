@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.social_media.myproject.dto.EmailImportLogDto;
+import com.social_media.myproject.exception.UserException;
 import com.social_media.myproject.model.EmailImportLog;
 import com.social_media.myproject.model.EmailImportToken;
 import com.social_media.myproject.model.User;
@@ -168,6 +170,23 @@ public class KindleEmailController {
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching import history");
+        }
+    }
+
+    @DeleteMapping("/import-history")
+    public ResponseEntity<?> clearImportHistory(@RequestHeader("Authorization") String jwt) {
+        try {
+            User user = userService.findUserProfileByJwt(jwt);
+            // Delete all email import logs for this user
+            var logs = emailImportLogRepository.findByUserOrderByReceivedAtDesc(user);
+            if (!logs.isEmpty()) {
+                emailImportLogRepository.deleteAll(logs);
+            }
+            return ResponseEntity.ok().build();
+        } catch (UserException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error clearing import history");
         }
     }
 

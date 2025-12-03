@@ -11,4 +11,6 @@ public interface EmailImportLogRepository extends JpaRepository<EmailImportLog, 
 
     List<EmailImportLog> findByUserOrderByReceivedAtDesc(User user);
     List<EmailImportLog> findByUserOrderByReceivedAtAsc(User user);
+
+    void deleteByUser(User user);
 }

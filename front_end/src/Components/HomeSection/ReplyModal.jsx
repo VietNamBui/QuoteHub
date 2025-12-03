@@ -5,6 +5,7 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { Avatar } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ImageIcon from "@mui/icons-material/Image";
 import FmdGoodIcon from "@mui/icons-material/FmdGood";
 import TagFacesIcon from "@mui/icons-material/TagFaces";
@@ -32,6 +33,7 @@ export default function ReplyModal({ handleClose, open, item }) {
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const [selectImage, setSelectedImage] = React.useState("");
   const dispatch=useDispatch();
+  const { auth } = useSelector((store) => store);
 
   const handleSubmit = (values) => {
     dispatch(createTweetReply(values))
@@ -69,14 +71,25 @@ export default function ReplyModal({ handleClose, open, item }) {
         <Box sx={style}>
           {item?.replyTwits && item.replyTwits.length > 0 && (
             <div className="ml-10 mt-2 mb-4 space-y-4 max-h-72 overflow-y-auto pr-4 border-b border-slate-200 pb-4">
-              {item.replyTwits.map((reply) => (
+              {item.replyTwits.map((reply) => {
+                const userImg = reply.user?.image;
+                const avatarSrc = (() => {
+                  if (!userImg) return undefined;
+                  return userImg.startsWith("/") ? `http://localhost:5454${userImg}` : userImg;
+                })();
+
+                return (
                 <div key={reply.id} className="flex space-x-5">
                   <Avatar
                     onClick={() => navigate(`/profile/${reply.user?.id}`)}
                     className="cursor-pointer"
-                    alt={reply.user?.fullName}
-                    src={reply.user?.avatar || "https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"}
-                  />
+                    alt={reply.user?.fullName || reply.user?.email || "U"}
+                    src={avatarSrc}
+                  >
+                    {!userImg && (reply.user?.fullName || reply.user?.email)
+                      ? (reply.user.fullName || reply.user.email).trim().charAt(0).toUpperCase()
+                      : null}
+                  </Avatar>
                   <div className="w-full">
                     <div className="flex justify-between items-center">
                       <div className="flex cursor-pointer items-center space-x-2">
@@ -114,15 +127,20 @@ export default function ReplyModal({ handleClose, open, item }) {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
           <section className={`py-10`}>
             <div className="flex space-x-5">
               <Avatar
-                alt="username"
-                src="https://i.pinimg.com/736x/2a/50/2a/2a502a0a0fa654983190b5ec57c1532a.jpg"
+                alt={auth.user?.fullName || auth.user?.email || "U"}
+                src={(() => {
+                  const img = auth.user?.image;
+                  if (!img) return undefined;
+                  return img.startsWith("/") ? `http://localhost:5454${img}` : img;
+                })()}
               />
               <div className="w-full">
                 <form onSubmit={formik.handleSubmit}>
@@ -130,7 +148,7 @@ export default function ReplyModal({ handleClose, open, item }) {
                     <input
                       type="text"
                       name="content"
-                      placeholder="Chuyện gì đang xảy ra vậy?"
+                      placeholder="Viết bình luận..."
                       className={`border-none outline-none text-xl bg-transparent`}
                       {...formik.getFieldProps("content")}
                     />

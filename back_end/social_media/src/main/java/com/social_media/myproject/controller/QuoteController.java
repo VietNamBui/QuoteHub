@@ -38,18 +38,6 @@ public class QuoteController {
     private final UserService userService;
     private final BookRepository bookRepository;
 
-    @PostMapping("/classify")
-    public ResponseEntity<?> classifyQuotes(@RequestBody Map<String, List<Long>> payload) {
-        List<Long> quoteIds = payload.get("quoteIds");
-        if (quoteIds == null || quoteIds.isEmpty()) {
-            return ResponseEntity.badRequest().body("quoteIds không được rỗng");
-        }
-
-        quoteService.classifyQuotes(quoteIds);
-
-        return ResponseEntity.ok("Phân loại thành công");
-    }
-
     @GetMapping("/books/me")
     public ResponseEntity<List<BookSummaryDto>> getBooksOfCurrentUser(@RequestHeader("Authorization") String jwt)
             throws UserException {
@@ -64,33 +52,10 @@ public class QuoteController {
                             b.getId(),
                             b.getTitle(),
                             b.getAuthor(),
-                            b.getYear(),
-                            count
+                            count,
+                            b.getAiMetadata()
                     );
                 })
-                .collect(Collectors.toList());
-
-        return new ResponseEntity<>(result, HttpStatus.OK);
-    }
-
-    @GetMapping("/unclassified")
-    public ResponseEntity<List<QuoteWithBookDto>> getUnclassifiedQuotesOfCurrentUser(
-            @RequestHeader("Authorization") String jwt
-    ) throws UserException {
-        User user = userService.findUserProfileByJwt(jwt);
-
-        List<Quote> quotes = quoteService.getUnclassifiedQuotesOfUser(user);
-
-        List<QuoteWithBookDto> result = quotes.stream()
-                .map(q -> new QuoteWithBookDto(
-                        q.getId(),
-                        q.getHighlight(),
-                        q.getPositionType(),
-                        q.getPositionValue(),
-                        q.getBook() != null ? q.getBook().getId() : null,
-                        q.getBook() != null ? q.getBook().getTitle() : null,
-                        q.getBook() != null ? q.getBook().getAuthor() : null
-                ))
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(result, HttpStatus.OK);

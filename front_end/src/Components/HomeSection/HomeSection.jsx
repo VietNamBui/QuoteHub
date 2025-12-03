@@ -7,7 +7,7 @@ import FmdGoodIcon from "@mui/icons-material/FmdGood";
 import TagFacesIcon from "@mui/icons-material/TagFaces";
 import TweetCard from "./TweetCard";
 import { useDispatch, useSelector } from "react-redux";
-import { createTweet, getFeedTweets, findTwitsById } from './../../Store/Twit/Action';
+import { getAllTweets, getFeedTweets, createTweet, findTwitsById } from "../../Store/Twit/Action";
 import { store } from './../../Store/store';
 import { uploadToCloudnary } from "../../Utils/uploadToCloudnary";
 import { connectFeedModerationSocket } from "../../Utils/feedModerationSocket";
@@ -105,6 +105,12 @@ const HomeSection = () => {
       } else if (action === "SHOW") {
         // Với SHOW, để đơn giản ta refetch lại feed để đảm bảo điều kiện follow, sort...
         dispatch(getFeedTweets());
+      } else if (action === "SHOW_REPLY" && event.replyId) {
+        // Khi admin duyệt một bình luận, refetch lại twit tương ứng
+        dispatch(findTwitsById(id));
+      } else if (action === "HIDE_REPLY" && event.replyId) {
+        // Khi admin chấp nhận báo cáo và ẩn một bình luận, refetch lại twit tương ứng
+        dispatch(findTwitsById(id));
       }
     });
 
@@ -303,7 +309,7 @@ const HomeSection = () => {
                 <input
                   type="text"
                   name="content"
-                  placeholder="Chuyện gì đang xảy ra vậy?"
+                  placeholder="Viết cảm nhận..."
                   className="border-none outline-none text-lg md:text-xl bg-transparent"
                   {...formik.getFieldProps("content")}
                 />
@@ -358,7 +364,15 @@ const HomeSection = () => {
       {/* Danh sách tweet trong feed */}
       <section className="space-y-4">
         {visibleTwits.map((item) => (
-          <TweetCard key={item.id} item={item} />
+          <TweetCard
+            key={item.id}
+            item={item}
+            onOpenDetail={() => {
+              setCurrentRootTwitId(item.id);
+              dispatch(findTwitsById(item.id));
+              setOpenTwitDetail(true);
+            }}
+          />
         ))}
       </section>
 

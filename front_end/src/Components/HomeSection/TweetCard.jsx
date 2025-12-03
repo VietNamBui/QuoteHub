@@ -173,7 +173,18 @@ const TweetCard = ({ item, onOpenDetail }) => {
             ? (item.user.fullName || item.user.email).trim().charAt(0).toUpperCase()
             : null}
         </Avatar>
-        <div className="w-full">
+        <div
+          className={
+            isAdminInAdminView
+              ? "w-full"
+              : "w-full cursor-pointer"
+          }
+          onClick={
+            isAdminInAdminView
+              ? undefined
+              : onOpenDetail || handleOpenReplyModel
+          }
+        >
           <div className="flex justify-between items-center">
             <div className="flex cursor-pointer items-center space-x-2">
               <span className="font-semibold">{item?.user?.fullName || "Ẩn danh"}</span>
@@ -248,11 +259,6 @@ const TweetCard = ({ item, onOpenDetail }) => {
           </div>
           <div className="mt-2">
             <div
-              onClick={
-                isAdminInAdminView
-                  ? undefined
-                  : onOpenDetail || (() => navigate(`/twit/${item?.id}`))
-              }
               className={
                 isAdminInAdminView
                   ? "space-y-2"

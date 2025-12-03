@@ -60,10 +60,22 @@ public class TwitServiceImplementation implements TwitService{
 		if (req.getQuote() == null || req.getQuote().getId() == null) {
 			throw new RuntimeException("Quote is required to create a twit");
 		}
-		// Kiểm duyệt nội dung twit trước khi lưu, gán trạng thái nhiều mức
-		AIClassificationService.ModerationResult mr = aiClassificationService.moderate(req.getContent());
+		// Lấy quote trước để ghép nội dung gửi sang AI kiểm duyệt
 		Quote quote = quoteRepository.findById(req.getQuote().getId())
 				.orElseThrow(() -> new RuntimeException("Quote not found with id " + req.getQuote().getId()));
+		String content = req.getContent() == null ? "" : req.getContent().trim();
+		String highlight = quote.getHighlight() == null ? "" : quote.getHighlight().trim();
+		String textForModeration;
+		if (!highlight.isEmpty()) {
+			textForModeration = content + "\n\n---\nĐoạn trích gốc:\n" + highlight;
+		} else {
+			textForModeration = content;
+		}
+		
+		System.out.println("TEXT SENT TO AI MODERATION:\n" + textForModeration);
+		
+		// Kiểm duyệt nội dung twit + đoạn trích trước khi lưu, gán trạng thái nhiều mức
+		AIClassificationService.ModerationResult mr = aiClassificationService.moderate(textForModeration);
 		
 		Twit twit = new Twit();
 		twit.setContent(req.getContent());
@@ -103,6 +115,47 @@ public class TwitServiceImplementation implements TwitService{
 		}
 		
 		return saved;
+	}
+
+	@Override
+	public Twit approveReplyModeration(Long replyId) throws TwitException {
+		Twit reply = findById(replyId);
+		if (reply == null) {
+			throw new TwitException("Reply not found with id" + replyId);
+		}
+		// Đảm bảo đây là reply
+		if (reply.getReplyFor() == null) {
+			throw new TwitException("Twit " + replyId + " is not a reply");
+		}
+		System.out.println("[approveReplyModeration] Approving reply id=" + replyId
+			+ " for parent=" + reply.getReplyFor().getId());
+		reply.setModerationStatus("APPROVED");
+		reply.setModerationReason(null);
+		Twit savedReply = twitRepository.save(reply);
+		// Gắn vào danh sách reply của bài gốc nếu chưa có
+		Twit parent = savedReply.getReplyFor();
+		if (parent != null) {
+			if (parent.getReplyTwits() == null) {
+				parent.setReplyTwits(new java.util.ArrayList<>());
+			}
+			boolean exists = parent.getReplyTwits().stream()
+				.anyMatch(r -> r.getId().equals(savedReply.getId()));
+			if (!exists) {
+				parent.getReplyTwits().add(savedReply);
+				parent = twitRepository.save(parent);
+			}
+		}
+		// Gửi sự kiện realtime cho FE để cập nhật reply mới
+		if (messagingTemplate != null && parent != null) {
+			java.util.Map<String, Object> payload = new java.util.HashMap<>();
+			payload.put("twitId", parent.getId());
+			payload.put("replyId", savedReply.getId());
+			payload.put("action", "SHOW_REPLY");
+			System.out.println("[approveReplyModeration] Sending WS event SHOW_REPLY twitId="
+				+ parent.getId() + " replyId=" + savedReply.getId());
+			messagingTemplate.convertAndSend("/topic/feed/moderation", payload);
+		}
+		return savedReply;
 	}
 
 	@Override
@@ -295,6 +348,12 @@ public class TwitServiceImplementation implements TwitService{
 		// Kiểm duyệt nội dung reply trước khi lưu, gán trạng thái nhiều mức
 		AIClassificationService.ModerationResult mr = aiClassificationService.moderate(req.getContent());
 		
+		// LOG để xem có gọi AI không và kết quả thế nào
+		System.out.println("=== REPLY MODERATION ===");
+		System.out.println("Content: " + req.getContent());
+		System.out.println("Safe: " + mr.safe + ", riskScore: " + mr.riskScore + ", categories: " + mr.categories);
+		System.out.println("========================");
+		
 		Twit twit = new Twit();
 		twit.setContent(req.getContent());
 		twit.setCreatedAt(LocalDateTime.now());
@@ -320,8 +379,8 @@ public class TwitServiceImplementation implements TwitService{
 		
 		Twit savedReply = twitRepository.save(twit);
 		
-		// Chỉ gắn vào danh sách reply & gửi notification nếu reply không bị BLOCKED
-		if (!"BLOCKED".equals(savedReply.getModerationStatus())) {
+		// Chỉ gắn vào danh sách reply & gửi notification nếu reply đã được APPROVED
+		if ("APPROVED".equals(savedReply.getModerationStatus())) {
 			replyFor.getReplyTwits().add(savedReply);
 			twitRepository.save(replyFor);
 			
@@ -530,10 +589,19 @@ public class TwitServiceImplementation implements TwitService{
 		if (messagingTemplate != null) {
 			messagingTemplate.convertAndSend("/topic/admin/analytics", "ANALYTICS_UPDATED");
 			messagingTemplate.convertAndSend("/topic/admin/moderation", "MODERATION_UPDATED");
-			// Báo cho client (newsfeed/profile) biết bài này bị ẩn
+			// Báo cho client biết nội dung bị ẩn
 			java.util.Map<String, Object> payload = new java.util.HashMap<>();
-			payload.put("twitId", saved.getId());
-			payload.put("action", "HIDE");
+			// Nếu là reply thì gửi sự kiện HIDE_REPLY cho bài gốc
+			if (Boolean.TRUE.equals(saved.getIsReply()) && saved.getReplyFor() != null) {
+				Twit parent = saved.getReplyFor();
+				payload.put("twitId", parent.getId());
+				payload.put("replyId", saved.getId());
+				payload.put("action", "HIDE_REPLY");
+			} else {
+				// Nếu là bài chính, gửi HIDE như cũ để newsfeed/profile ẩn bài
+				payload.put("twitId", saved.getId());
+				payload.put("action", "HIDE");
+			}
 			messagingTemplate.convertAndSend("/topic/feed/moderation", payload);
 		}
 		return saved;

@@ -100,6 +100,87 @@ public class AIClassificationService {
     }
 
     /**
+     * Gọi Gemini để sinh metadata cho một cuốn sách dựa trên title + author.
+     * Trả về đúng chuỗi JSON mà model trả về (sau khi loại bỏ ```json ... ``` nếu có).
+     */
+    public String enrichBookMetadata(String title, String author) {
+
+        String prompt =
+            "Bạn là hệ thống gợi ý metadata sách và luôn trả lời BẰNG TIẾNG VIỆT. " +
+            "Với thông tin về một cuốn sách (title + author), hãy phân tích kỹ nội dung " +
+            "và trả về JSON với đúng schema sau, KHÔNG thêm bất cứ chữ nào khác ngoài JSON thuần:\n" +
+            "{\n" +
+            "  \"authorBioShort\": string,        // Giới thiệu ngắn về tác giả (1-2 câu, tiếng Việt)\n" +
+            "  \"authorDomain\": string,         // Lĩnh vực, thế mạnh chính của tác giả (tiếng Việt)\n" +
+            "  \"mainGenre\": string,            // Thể loại chính của sách, viết bằng tiếng Việt\n" +
+            "  \"topicTags\": string[],          // 5-8 hashtag nội dung chính, tiếng Việt, không có dấu #\n" +
+            "  \"summaryShort\": string,         // Tóm tắt nội dung dài 3-5 câu, dễ hiểu, tiếng Việt\n" +
+            "  \"readingLevel\": string,         // Mức độ đọc: ví dụ 'Dễ', 'Trung bình', 'Khó'\n" +
+            "  \"targetAudience\": string        // Nhóm độc giả phù hợp, mô tả bằng tiếng Việt\n" +
+            "}\n\n" +
+            "YÊU CẦU: Toàn bộ nội dung trong JSON phải là tiếng Việt, không được dùng tiếng Anh.\n" +
+            "Thông tin sách:\n" +
+            "Title: " + (title == null ? "" : title) + "\n" +
+            "Author: " + (author == null ? "" : author) + "\n";
+
+        Map<String, Object> body = Map.of(
+            "contents", List.of(
+                Map.of(
+                    "parts", List.of(
+                        Map.of("text", prompt)
+                    )
+                )
+            ),
+            "generationConfig", Map.of(
+                "temperature", 0.4
+            )
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-goog-api-key", apiKey);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<Map> response = rest.exchange(
+                apiUrl,
+                HttpMethod.POST,
+                entity,
+                Map.class
+            );
+
+            Map<String, Object> bodyMap = response.getBody();
+            if (bodyMap == null) return null;
+
+            List candidates = (List) bodyMap.get("candidates");
+            if (candidates == null || candidates.isEmpty()) return null;
+
+            Map<String, Object> firstCandidate = (Map<String, Object>) candidates.get(0);
+            Map<String, Object> contentObj = (Map<String, Object>) firstCandidate.get("content");
+            if (contentObj == null) return null;
+
+            List parts = (List) contentObj.get("parts");
+            if (parts == null || parts.isEmpty()) return null;
+
+            Map<String, Object> firstPart = (Map<String, Object>) parts.get(0);
+            String content = (String) firstPart.get("text");
+            if (content == null) return null;
+
+            content = content
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+            return content;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
      * Gọi Gemini để lấy kết quả kiểm duyệt dạng có cấu trúc. Không ném lỗi nghiệp vụ,
      * chỉ log khi lỗi kỹ thuật và trả về kết quả "an toàn" mặc định.
      */

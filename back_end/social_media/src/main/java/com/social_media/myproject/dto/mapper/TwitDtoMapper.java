@@ -41,13 +41,26 @@ public class TwitDtoMapper {
 		twitDto.setLiked(isLiked);
 		twitDto.setRetwit(isRetwited);
 		twitDto.setRetwitUserId(retwitUserId);
+		twitDto.setReply(Boolean.TRUE.equals(twit.getIsReply()));
 		// Map trạng thái kiểm duyệt để feed/reply giữ được thông tin sau reload
 		twitDto.setModerationStatus(twit.getModerationStatus());
 		twitDto.setModerationReason(twit.getModerationReason());
 		// Map trạng thái kiểm duyệt để feed/reply giữ được thông tin sau reload
 		twitDto.setModerationStatus(twit.getModerationStatus());
 		twitDto.setModerationReason(twit.getModerationReason());
-		twitDto.setReplyTwits(toTwitDtos(twit.getReplyTwits(), reqUser, visitedIds));
+		// Chỉ map các reply đã được APPROVED (hoặc chưa có trạng thái) để ẩn PENDING/BLOCKED
+		java.util.List<Twit> visibleReplies;
+		if (twit.getReplyTwits() == null || twit.getReplyTwits().isEmpty()) {
+			visibleReplies = java.util.List.of();
+		} else {
+			visibleReplies = twit.getReplyTwits().stream()
+				.filter(r -> {
+					String s = r.getModerationStatus();
+					return s == null || "APPROVED".equals(s);
+				})
+				.toList();
+		}
+		twitDto.setReplyTwits(toTwitDtos(visibleReplies, reqUser, visitedIds));
 		// Map trạng thái kiểm duyệt
 		twitDto.setModerationStatus(twit.getModerationStatus());
 		twitDto.setModerationReason(twit.getModerationReason());
@@ -96,9 +109,14 @@ public class TwitDtoMapper {
 		if (twit == null || twit.getReplyTwits() == null) return 0;
 		if (visitedIds.contains(twit.getId())) return 0;
 		visitedIds.add(twit.getId());
-		int total = twit.getReplyTwits().size();
+		int total = 0;
 		for (Twit reply : twit.getReplyTwits()) {
-			total += countAllRepliesInternal(reply, visitedIds);
+			String s = reply.getModerationStatus();
+			// Chỉ đếm các reply đã được APPROVED (hoặc chưa có trạng thái)
+			if (s == null || "APPROVED".equals(s)) {
+				total += 1;
+				total += countAllRepliesInternal(reply, visitedIds);
+			}
 		}
 		return total;
 	}
@@ -175,11 +193,15 @@ public class TwitDtoMapper {
 			}
 		}
 		
-	    // đệ quy qua replyTwits
+	    // đệ quy qua replyTwits nhưng chỉ lấy các reply đã APPROVED (hoặc chưa có trạng thái)
 	    List<TwitDto> replyDtos = new ArrayList<>();
-	    for (Twit reply : twit.getReplyTwits()) {
-	        TwitDto dto = toTwitDto(reply, reqUser, visitedIds);
-	        if (dto != null) replyDtos.add(dto);
+	    if (twit.getReplyTwits() != null) {
+	    	for (Twit reply : twit.getReplyTwits()) {
+	    		String s = reply.getModerationStatus();
+	    		if (s != null && !"APPROVED".equals(s)) continue;
+	    		TwitDto dto = toTwitDto(reply, reqUser, visitedIds);
+	    		if (dto != null) replyDtos.add(dto);
+	    	}
 	    }
 	    twitDto.setReplyTwits(replyDtos);
 		

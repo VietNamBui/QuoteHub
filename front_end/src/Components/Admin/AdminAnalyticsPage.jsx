@@ -23,9 +23,9 @@ const ColumnChart = ({ items }) => {
   return (
     <Stack
       direction="row"
-      spacing={2}
+      spacing={3}
       alignItems="flex-end"
-      sx={{ mt: 1, minHeight: 140 }}
+      sx={{ mt: 2, minHeight: 260 }}
     >
       {items.map((item) => {
         const height = max > 0 ? (item.value / max) * 100 : 0;
@@ -41,10 +41,10 @@ const ColumnChart = ({ items }) => {
             </Typography>
             <Box
               sx={{
-                width: "60%",
+                width: "70%",
                 height: `${height}%`,
-                minHeight: item.value > 0 ? 8 : 2,
-                borderRadius: 1.5,
+                minHeight: item.value > 0 ? 28 : 8,
+                borderRadius: 3,
                 bgcolor: item.color || "#2563eb",
                 transition: "height 0.3s ease",
               }}
@@ -134,14 +134,30 @@ const AdminAnalyticsPage = () => {
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 2.5, borderRadius: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-              Trạng thái kiểm duyệt bài viết
+              AI kiểm duyệt bài viết
             </Typography>
             <ColumnChart
               items={[
-                { label: "Đã duyệt", value: moderation.approved || 0, color: "#22c55e" },
-                { label: "Đang chờ", value: moderation.pending || 0, color: "#facc15" },
-                { label: "Từ chối", value: moderation.rejected || 0, color: "#f97316" },
-                { label: "Bị chặn", value: moderation.blocked || 0, color: "#ef4444" },
+                {
+                  label: "Đang chờ duyệt",
+                  value: moderation.pending || 0,
+                  color: "#facc15",
+                },
+                {
+                  label: "Bài được cho phép",
+                  value: moderation.approved || 0,
+                  color: "#22c55e",
+                },
+                {
+                  label: "Bài bị ẩn (vi phạm)",
+                  value: moderation.rejected || 0,
+                  color: "#f97316",
+                },
+                {
+                  label: "Bị chặn",
+                  value: moderation.blocked || 0,
+                  color: "#ef4444",
+                },
               ]}
             />
           </Paper>
@@ -150,23 +166,23 @@ const AdminAnalyticsPage = () => {
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 2.5, borderRadius: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-              Thống kê báo cáo & nghi ngờ
+              User báo cáo bài viết
             </Typography>
             <ColumnChart
               items={[
-                {
-                  label: "Bài có report PENDING",
-                  value: moderation.reportedPending || 0,
-                  color: "#0ea5e9",
-                },
                 {
                   label: "Báo cáo chờ xử lý",
                   value: reports.pendingReports || 0,
                   color: "#f97316",
                 },
                 {
-                  label: "Báo cáo đã xử lý",
-                  value: reports.resolvedReports || 0,
+                  label: "Báo cáo bị từ chối (bài giữ lại)",
+                  value: reports.approvedReports || 0,
+                  color: "#0ea5e9",
+                },
+                {
+                  label: "Bài vi phạm (báo cáo đúng)",
+                  value: reports.rejectedReports || 0,
                   color: "#22c55e",
                 },
               ]}

@@ -174,7 +174,27 @@ const AdminModerationPage = () => {
   const handleReject = async (id) => {
     try {
       // Nút phụ: bỏ qua cảnh báo/báo cáo, giữ bài lại (gọi /approve)
-      await api.post(`/api/moderation/twits/${id}/approve`);
+      // Nếu là bình luận (reply) thì gọi API duyệt reply để bắn sự kiện SHOW_REPLY
+      const target =
+        tab === "ai"
+          ? subTab === "pending"
+            ? aiPending.find((t) => t.id === id)
+            : subTab === "approved"
+            ? aiApproved.find((t) => t.id === id)
+            : subTab === "rejected"
+            ? aiRejected.find((t) => t.id === id)
+            : aiBlocked.find((t) => t.id === id)
+          : subTab === "pending"
+          ? repPending.find((t) => t.id === id)
+          : subTab === "approved"
+          ? repApproved.find((t) => t.id === id)
+          : repRejected.find((t) => t.id === id);
+
+      if (target && target.reply) {
+        await api.post(`/api/moderation/replies/${id}/approve`);
+      } else {
+        await api.post(`/api/moderation/twits/${id}/approve`);
+      }
       toast.success(
         tab === "ai" ? "Đã bỏ qua cảnh báo, bài vẫn hiển thị" : "Đã từ chối báo cáo, bài vẫn hiển thị"
       );

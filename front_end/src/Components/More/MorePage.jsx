@@ -1,11 +1,22 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../config/api";
-import { Box, CircularProgress, Grid, Paper, Typography, Tabs, Tab, IconButton } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Grid,
+  Paper,
+  Typography,
+  Tabs,
+  Tab,
+  IconButton,
+  Button,
+  Dialog,
+  DialogContent,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import KindleImportPage from "./KindleImportPage";
 import KindleEmailImportPage from "./KindleEmailImportPage";
-import MoreClassificationPage from "./MoreClassificationPage";
 import { toast } from "react-toastify";
 
 const MorePage = () => {
@@ -15,6 +26,8 @@ const MorePage = () => {
   const location = useLocation();
   const [tab, setTab] = useState(location.state?.initialTab || "books");
   const navigate = useNavigate();
+
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -36,6 +49,26 @@ const MorePage = () => {
 
   const handleOpenBook = (bookId) => {
     navigate(`/more/books/${bookId}`);
+  };
+
+  const handleAnalyzeBook = async (bookId) => {
+    const ok = window.confirm(
+      "AI sẽ phân tích cuốn sách này và cập nhật lại phần mô tả + hashtag. Bạn có chắc muốn tiếp tục?"
+    );
+    if (!ok) return;
+
+    try {
+      setAiAnalyzing(true);
+      await api.post(`/api/books/${bookId}/ai-enrich`);
+      toast.success("Đã phân tích AI cho cuốn sách này.");
+      // Refetch để lấy aiMetadata mới nhất
+      fetchBooks();
+    } catch (err) {
+      toast.error("Phân tích AI thất bại. Hãy thử lại.");
+    }
+    finally {
+      setAiAnalyzing(false);
+    }
   };
 
   const handleDeleteBook = async (bookId) => {
@@ -94,11 +127,6 @@ const MorePage = () => {
           value="kindleEmail"
           sx={{ textTransform: "none", fontWeight: 600, ml: 2 }}
         />
-        <Tab
-          label="Classification"
-          value="classification"
-          sx={{ textTransform: "none", fontWeight: 600, ml: 2 }}
-        />
       </Tabs>
 
       {tab === "books" && (
@@ -117,51 +145,107 @@ const MorePage = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {books.map((book) => (
-                <Grid item xs={12} sm={6} md={4} key={book.id}>
-                  <Paper
-                    elevation={4}
-                    sx={{
-                      cursor: "pointer",
-                      p: 2.5,
-                      borderRadius: 3,
-                      bgcolor: "#ffffff",
-                      border: "1px solid rgba(15,23,42,0.06)",
-                      transition: "all 0.2s ease",
-                      ":hover": {
-                        boxShadow: "0 16px 40px rgba(15,23,42,0.15)",
-                        borderColor: "rgba(37,99,235,0.4)",
-                        transform: "translateY(-2px)",
-                      },
-                    }}
-                  >
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" onClick={() => handleOpenBook(book.id)}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ color: "rgba(15,23,42,0.6)", mb: 0.5 }}>
-                          {book.author} {book.year ? `· ${book.year}` : ""}
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                          {book.title}
-                        </Typography>
-                        {typeof book.quotesCount === "number" && (
-                          <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.65)" }}>
-                            {book.quotesCount} đoạn quote
-                          </Typography>
-                        )}
-                      </Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBook(book.id);
-                        }}
+              {books.map((book) => {
+                let meta = null;
+                if (book.aiMetadata) {
+                  try {
+                    meta = JSON.parse(book.aiMetadata);
+                  } catch (e) {
+                    // ignore parse error
+                  }
+                }
+
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={book.id}>
+                    <Paper
+                      elevation={4}
+                      sx={{
+                        cursor: "pointer",
+                        p: 2.5,
+                        borderRadius: 3,
+                        bgcolor: "#ffffff",
+                        border: "1px solid rgba(15,23,42,0.06)",
+                        transition: "all 0.2s ease",
+                        ":hover": {
+                          boxShadow: "0 16px 40px rgba(15,23,42,0.15)",
+                          borderColor: "rgba(37,99,235,0.4)",
+                          transform: "translateY(-2px)",
+                        },
+                      }}
+                    >
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        onClick={() => handleOpenBook(book.id)}
                       >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))}
+                        <Box>
+                          {meta && Array.isArray(meta.topicTags) && meta.topicTags.length > 0 && (
+                            <Box mb={0.5} sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                              {meta.topicTags.map((tag) => (
+                                <Typography
+                                  key={tag}
+                                  variant="caption"
+                                  sx={{
+                                    backgroundColor: "rgba(37,99,235,0.06)",
+                                    color: "rgba(37,99,235,0.9)",
+                                    borderRadius: 999,
+                                    px: 1,
+                                    py: 0.2,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  #{tag}
+                                </Typography>
+                              ))}
+                            </Box>
+                          )}
+                          <Typography variant="subtitle2" sx={{ color: "rgba(15,23,42,0.6)", mb: 0.5 }}>
+                            {book.author}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                            {book.title}
+                          </Typography>
+                          {meta && meta.summaryShort && (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "rgba(15,23,42,0.8)", mb: 0.5 }}
+                            >
+                              {meta.summaryShort}
+                            </Typography>
+                          )}
+                          {typeof book.quotesCount === "number" && (
+                            <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.65)" }}>
+                              {book.quotesCount} đoạn quote
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteBook(book.id);
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAnalyzeBook(book.id);
+                            }}
+                          >
+                            Phân tích AI
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                );
+              })}
             </Grid>
           )}
         </Box>
@@ -179,11 +263,30 @@ const MorePage = () => {
         </Box>
       )}
 
-      {tab === "classification" && (
-        <Box>
-          <MoreClassificationPage />
-        </Box>
-      )}
+      <Dialog
+        open={aiAnalyzing}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            px: 4,
+            py: 3,
+            textAlign: "center",
+          },
+        }}
+      >
+        <DialogContent>
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+            <CircularProgress />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              AI đang phân tích cuốn sách của bạn...
+            </Typography>
+            <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.7)" }}>
+              Vui lòng chờ trong giây lát...
+            </Typography>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
     </Box>
   );
 };

@@ -1,5 +1,5 @@
-import { Box, Paper, Stack, Typography, Button } from "@mui/material";
-import React, { useEffect } from "react";
+import { Box, Paper, Stack, Typography, Button, Avatar, Divider } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import Navigation from "../Navigation/Navigation";
 import HomeSection from "../HomeSection/HomeSection";
 import RightPart from "../RightPart/RightPart";
@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { connectNotificationSocket } from "../../Utils/notificationSocket";
 import { toast } from "react-toastify";
 import { logout } from "../../Store/Auth/Action";
+import { api } from "../../config/api";
 import AdminModerationPage from "../Admin/AdminModerationPage";
 import AdminAnalyticsPage from "../Admin/AdminAnalyticsPage";
 
@@ -25,6 +26,8 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const isAdminView = auth.user?.admin && location.pathname.startsWith("/admin");
+
+  const [adminStats, setAdminStats] = useState(null); // { moderation: {...}, reports: {...} }
 
   // Kết nối WebSocket để nhận thông báo realtime
   useEffect(() => {
@@ -55,6 +58,20 @@ const HomePage = () => {
       disconnect && disconnect();
     };
   }, [auth.user, dispatch]);
+
+  // Load tóm tắt analytics nhẹ cho panel bên phải khi là admin
+  useEffect(() => {
+    if (!isAdminView) return;
+    const fetchAdminStats = async () => {
+      try {
+        const res = await api.get("/api/admin/analytics");
+        setAdminStats(res.data || {});
+      } catch (e) {
+        console.error("Không thể tải thống kê admin", e);
+      }
+    };
+    fetchAdminStats();
+  }, [isAdminView]);
 
 
   return (
@@ -225,21 +242,65 @@ const HomePage = () => {
           >
             {isAdminView ? (
               <Stack spacing={2}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Thông tin Admin
-                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar
+                    alt={auth.user?.fullName || auth.user?.email || "A"}
+                    src={(() => {
+                      const img = auth.user?.image;
+                      if (!img) return undefined;
+                      return img.startsWith("/") ? `http://localhost:5454${img}` : img;
+                    })()}
+                  >
+                    {!auth.user?.image && (auth.user?.fullName || auth.user?.email)
+                      ? (auth.user.fullName || auth.user.email).trim().charAt(0).toUpperCase()
+                      : null}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      {auth.user?.fullName || "Quản trị viên"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.75)" }}>
+                      {auth.user?.email}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        mt: 0.5,
+                        px: 1,
+                        py: 0.3,
+                        borderRadius: 999,
+                        bgcolor: "#eff6ff",
+                        color: "#1d4ed8",
+                        display: "inline-block",
+                      }}
+                    >
+                      Admin · Moderation
+                    </Typography>
+                  </Box>
+                </Stack>
+
                 <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.7)" }}>
-                  Bạn đang đăng nhập với quyền quản trị. Tại đây có thể theo dõi trạng thái
-                  kiểm duyệt, báo cáo người dùng và các số liệu phân tích hệ thống.
+                  Bạn đang đăng nhập với quyền quản trị. Tại đây có thể theo dõi trạng thái kiểm
+                  duyệt, báo cáo người dùng và các số liệu phân tích hệ thống.
                 </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => dispatch(logout())}
-                  sx={{ alignSelf: "flex-start", textTransform: "none", mt: 1, borderRadius: 2 }}
-                >
-                  Đăng xuất
-                </Button>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Box sx={{ pt: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => dispatch(logout())}
+                    sx={{
+                      alignSelf: "flex-start",
+                      textTransform: "none",
+                      mt: 1,
+                      borderRadius: 2,
+                    }}
+                  >
+                    Đăng xuất
+                  </Button>
+                </Box>
               </Stack>
             ) : (
               <RightPart />

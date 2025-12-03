@@ -58,6 +58,19 @@ public class ModerationController {
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
+    // Duyệt comment (reply) sau khi AI gắn PENDING/BLOCKED
+    @PostMapping("/replies/{id}/approve")
+    public ResponseEntity<Twit> approveReply(
+            @PathVariable("id") Long id,
+            @RequestHeader("Authorization") String jwt) throws UserException, TwitException {
+        var user = userService.findUserProfileByJwt(jwt);
+        if (!user.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        Twit updated = twitService.approveReplyModeration(id);
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
     // Lấy danh sách tất cả twit đang ở trạng thái AI PENDING (không cần phải bị report)
     @GetMapping("/twits/pending")
     public ResponseEntity<java.util.List<TwitDto>> getPendingModerationTwits(

@@ -3,8 +3,6 @@ package com.social_media.myproject.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,16 +22,6 @@ public class Quote {
     private String positionType;
     private Integer positionValue;
 
-    @ManyToMany
-    @JoinTable(
-        name = "label_quote",
-        joinColumns = @JoinColumn(name = "quote_id"),
-        inverseJoinColumns = @JoinColumn(name = "label_id")
-    )
-    @Builder.Default
-    @JsonIgnore
-    private List<Label> labels = new ArrayList<>();
-    
     @ManyToOne
     @JoinColumn(name = "book_id")  
     private Book book;

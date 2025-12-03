@@ -56,9 +56,12 @@ public class AnalyticsController {
                 .map(r -> r.getTwit().getId())
                 .distinct()
                 .count();
+
         long totalReports = reportRepository.count();
         long pendingReports = reportRepository.countByStatus("PENDING");
-        long resolvedReports = totalReports - pendingReports;
+        long approvedReports = reportRepository.countByStatus("APPROVED");
+        long rejectedReports = reportRepository.countByStatus("REJECTED");
+        long resolvedReports = approvedReports + rejectedReports;
 
         Map<String, Object> moderationStats = new HashMap<>();
         moderationStats.put("totalTwits", totalTwits);
@@ -71,6 +74,8 @@ public class AnalyticsController {
         Map<String, Object> reportStats = new HashMap<>();
         reportStats.put("totalReports", totalReports);
         reportStats.put("pendingReports", pendingReports);
+        reportStats.put("approvedReports", approvedReports);
+        reportStats.put("rejectedReports", rejectedReports);
         reportStats.put("resolvedReports", resolvedReports);
 
         data.put("totalUsers", totalUsers);

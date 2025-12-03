@@ -28,6 +28,9 @@ public class TwitDto {
 	
 	private boolean isRetwit;
 	
+	// true nếu đây là bình luận (reply), false nếu là bài chính
+	private boolean reply;
+	
 	private List<Long>retwitUserId;
 	
 	private List<TwitDto> replyTwits;
