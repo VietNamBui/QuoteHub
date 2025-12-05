@@ -5,6 +5,7 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PendingIcon from "@mui/icons-material/Pending";
 import GavelIcon from "@mui/icons-material/Gavel";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 export const navigationMenu = [
   {
@@ -36,6 +37,18 @@ export const navigationMenu = [
     title: "Moderation",
     icon: GavelIcon,
     path: "/admin/moderation",
+    adminOnly: true,
+  },
+  {
+    title: "Analytics",
+    icon: VerifiedIcon,
+    path: "/admin/analytics",
+    adminOnly: true,
+  },
+  {
+    title: "Phân quyền",
+    icon: AdminPanelSettingsIcon,
+    path: "/admin/permissions",
     adminOnly: true,
   },
 ];

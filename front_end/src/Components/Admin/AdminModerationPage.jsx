@@ -4,8 +4,10 @@ import { toast } from "react-toastify";
 import { api } from "../../config/api";
 import TweetCard from "../HomeSection/TweetCard";
 import { connectModerationSocket } from "../../Utils/moderationSocket";
+import { useSelector } from "react-redux";
 
 const AdminModerationPage = () => {
+  const { auth } = useSelector((store) => store);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("ai"); // "ai" | "reports"
   const [subTab, setSubTab] = useState("pending"); // "pending" | "approved" | "rejected" | "blocked" (AI only)
@@ -375,22 +377,44 @@ const AdminModerationPage = () => {
 
             {subTab === "pending" && (
               <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleReject(twit.id)}
-                >
-                  {tab === "ai" ? "Bỏ qua cảnh báo (giữ bài)" : "Từ chối báo cáo (giữ bài)"}
-                </Button>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="primary"
-                  onClick={() => handleApprove(twit.id)}
-                >
-                  {tab === "ai" ? "Chấp nhận cảnh báo (ẩn bài)" : "Chấp nhận báo cáo (ẩn bài)"}
-                </Button>
+                {twit.user && auth.user && twit.user.id === auth.user.id ? (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled
+                    sx={{
+                      flexGrow: 1,
+                      justifyContent: "center",
+                      borderStyle: "dashed",
+                      color: "rgba(15,23,42,0.5)",
+                      borderColor: "rgba(148,163,184,0.8)",
+                      backgroundColor: "rgba(248,250,252,0.9)",
+                    }}
+                  >
+                    Đây là bài viết của bạn, không thể tự kiểm duyệt.
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleReject(twit.id)}
+                    >
+                      {tab === "ai" ? "Bỏ qua cảnh báo (giữ bài)" : "Từ chối báo cáo (giữ bài)"}
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleApprove(twit.id)}
+                    >
+                      {tab === "ai"
+                        ? "Chấp nhận cảnh báo (ẩn bài)"
+                        : "Chấp nhận báo cáo (ẩn bài)"}
+                    </Button>
+                  </>
+                )}
               </Stack>
             )}
           </Box>

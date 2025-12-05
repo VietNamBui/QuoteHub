@@ -40,6 +40,11 @@ public class ModerationController {
         if (!user.isAdmin()) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+        // Không cho phép admin tự duyệt bài của chính mình
+        Twit target = twitService.findById(id);
+        if (target.getUser() != null && target.getUser().getId().equals(user.getId())) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         Twit updated = twitService.approveModeration(id);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
@@ -54,6 +59,11 @@ public class ModerationController {
         if (!user.isAdmin()) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+        // Không cho phép admin tự từ chối/bỏ chặn bài của chính mình
+        Twit target = twitService.findById(id);
+        if (target.getUser() != null && target.getUser().getId().equals(user.getId())) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         Twit updated = twitService.rejectModeration(id, req.getReason());
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
@@ -66,6 +76,11 @@ public class ModerationController {
         var user = userService.findUserProfileByJwt(jwt);
         if (!user.isAdmin()) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        // Không cho phép admin tự duyệt reply của chính mình
+        Twit reply = twitService.findById(id);
+        if (reply.getUser() != null && reply.getUser().getId().equals(user.getId())) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         Twit updated = twitService.approveReplyModeration(id);
         return new ResponseEntity<>(updated, HttpStatus.OK);

@@ -18,6 +18,7 @@ import { logout } from "../../Store/Auth/Action";
 import { api } from "../../config/api";
 import AdminModerationPage from "../Admin/AdminModerationPage";
 import AdminAnalyticsPage from "../Admin/AdminAnalyticsPage";
+import AdminPermissionPage from "../Admin/AdminPermissionPage";
 
 const HomePage = () => {
   const { auth } = useSelector((store) => store);
@@ -117,41 +118,7 @@ const HomePage = () => {
               justifyContent: "center", // căn giữa nội dung theo chiều dọc
             }}
           >
-            {isAdminView ? (
-              <Stack spacing={2}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Bảng điều khiển Admin
-                </Typography>
-                <Stack spacing={1}>
-                  <Button
-                    size="small"
-                    variant={location.pathname.startsWith("/admin/moderation") ? "contained" : "text"}
-                    onClick={() => navigate("/admin/moderation")}
-                    sx={{
-                      justifyContent: "flex-start",
-                      textTransform: "none",
-                      borderRadius: 2,
-                    }}
-                  >
-                    Moderation
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={location.pathname.startsWith("/admin/analytics") ? "contained" : "text"}
-                    onClick={() => navigate("/admin/analytics")}
-                    sx={{
-                      justifyContent: "flex-start",
-                      textTransform: "none",
-                      borderRadius: 2,
-                    }}
-                  >
-                    Analytics
-                  </Button>
-                </Stack>
-              </Stack>
-            ) : (
-              <Navigation />
-            )}
+            <Navigation />
           </Paper>
         </Box>
 
@@ -175,26 +142,8 @@ const HomePage = () => {
             }}
           >
             <Routes>
-              <Route
-                path="/"
-                element={
-                  auth.user?.admin ? (
-                    <Navigate to="/admin/moderation" replace />
-                  ) : (
-                    <HomeSection />
-                  )
-                }
-              ></Route>
-              <Route
-                path="/home"
-                element={
-                  auth.user?.admin ? (
-                    <Navigate to="/admin/moderation" replace />
-                  ) : (
-                    <HomeSection />
-                  )
-                }
-              ></Route>
+              <Route path="/" element={<HomeSection />}></Route>
+              <Route path="/home" element={<HomeSection />}></Route>
               <Route path="/notification" element={<NotificationPage />}></Route>
               <Route path="/communities" element={<CommunitiesPage />}></Route>
               <Route path="/profile/:id" element={<Profile />}></Route>
@@ -214,11 +163,17 @@ const HomePage = () => {
                   auth.user?.admin ? <AdminAnalyticsPage /> : <Navigate to="/home" replace />
                 }
               ></Route>
+              <Route
+                path="/admin/permissions"
+                element={
+                  auth.user?.admin ? <AdminPermissionPage /> : <Navigate to="/home" replace />
+                }
+              ></Route>
             </Routes>
           </Paper>
         </Box>
 
-        {/* Cột phải: RightPart */}
+        {/* Cột phải: RightPart (giống nhau cho user và admin) */}
         <Box
           sx={{
             flex: "0 0 300px",
@@ -240,71 +195,7 @@ const HomePage = () => {
               justifyContent: "center", // căn giữa nội dung theo chiều dọc
             }}
           >
-            {isAdminView ? (
-              <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Avatar
-                    alt={auth.user?.fullName || auth.user?.email || "A"}
-                    src={(() => {
-                      const img = auth.user?.image;
-                      if (!img) return undefined;
-                      return img.startsWith("/") ? `http://localhost:5454${img}` : img;
-                    })()}
-                  >
-                    {!auth.user?.image && (auth.user?.fullName || auth.user?.email)
-                      ? (auth.user.fullName || auth.user.email).trim().charAt(0).toUpperCase()
-                      : null}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      {auth.user?.fullName || "Quản trị viên"}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.75)" }}>
-                      {auth.user?.email}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        mt: 0.5,
-                        px: 1,
-                        py: 0.3,
-                        borderRadius: 999,
-                        bgcolor: "#eff6ff",
-                        color: "#1d4ed8",
-                        display: "inline-block",
-                      }}
-                    >
-                      Admin · Moderation
-                    </Typography>
-                  </Box>
-                </Stack>
-
-                <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.7)" }}>
-                  Bạn đang đăng nhập với quyền quản trị. Tại đây có thể theo dõi trạng thái kiểm
-                  duyệt, báo cáo người dùng và các số liệu phân tích hệ thống.
-                </Typography>
-
-                <Divider sx={{ my: 1 }} />
-
-                <Box sx={{ pt: 1 }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => dispatch(logout())}
-                    sx={{
-                      alignSelf: "flex-start",
-                      textTransform: "none",
-                      mt: 1,
-                      borderRadius: 2,
-                    }}
-                  >
-                    Đăng xuất
-                  </Button>
-                </Box>
-              </Stack>
-            ) : (
-              <RightPart />
-            )}
+            <RightPart />
           </Paper>
         </Box>
       </Box>
