@@ -46,7 +46,7 @@ export const navigationMenu = [
     adminOnly: true,
   },
   {
-    title: "Phân quyền",
+    title: "Permissions",
     icon: AdminPanelSettingsIcon,
     path: "/admin/permissions",
     adminOnly: true,
