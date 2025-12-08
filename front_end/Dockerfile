@@ -1,16 +1,11 @@
-# Build React app
-FROM node:18-alpine AS build
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
-COPY . .
-
-# Tăng giới hạn bộ nhớ cho Node.js để tránh lỗi "JavaScript heap out of memory" khi build
-ENV NODE_OPTIONS="--max_old_space_size=2048"
-RUN npm run build
-
-# Serve build bằng Nginx
 FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
+WORKDIR /usr/share/nginx/html
+
+# Xoá nội dung default của Nginx
+RUN rm -rf ./*
+
+# Copy thư mục build (đã được build sẵn ở máy dev hoặc CI) vào image
+COPY build/ ./
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
