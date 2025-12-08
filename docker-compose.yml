@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8
+    container_name: quotehub-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: twitter_youtube
+      MYSQL_USER: quotehub
+      MYSQL_PASSWORD: quotehubpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+  backend:
+    build: ./back_end/social_media
+    container_name: quotehub-backend
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/twitter_youtube
+      SPRING_DATASOURCE_USERNAME: quotehub
+      SPRING_DATASOURCE_PASSWORD: quotehubpass
+    ports:
+      - "5454:5454"
+    restart: always
+
+  frontend:
+    build: ./front_end
+    container_name: quotehub-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: always
+
+volumes:
+  db_data:
