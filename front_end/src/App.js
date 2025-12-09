@@ -27,7 +27,6 @@ function App() {
     <div>
       <Routes>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        {/* Khi đã có jwt nhưng chưa load xong user, hiển thị trạng thái loading thay vì render Home rồi nhảy admin */}
         <Route
           path='/*'
           element={
