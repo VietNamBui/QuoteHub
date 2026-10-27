@@ -1,13 +1,5 @@
 # 📖 QuoteHub – AI-Powered Social Network for Kindle Book Quotes
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17" />
-  <img src="https://img.shields.io/badge/Spring_Boot-3.5-brightgreen?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" />
-  <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
-  <img src="https://img.shields.io/badge/MySQL-8.0-informational?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
-  <img src="https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  <img src="https://img.shields.io/badge/Google_Gemini-2.0_Flash-blueviolet?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
-</p>
 
 > **QuoteHub** is a specialized micro-blogging and social networking platform designed for book lovers to share, curate, and discuss highlights synced directly from **Amazon Kindle**. It features automated email inbound parsing, multi-tier AI content moderation, real-time interactive notifications, and an intuitive admin analytics portal.
 
